@@ -19,42 +19,9 @@ import {
   Leaf,
 } from "lucide-react";
 
-/* =========================================================================
-   SHOPIFY CONFIG  ── REPLACE THE VALUES BELOW WITH YOUR REAL STORE DETAILS.
-   How it works: clicking "Secure Checkout" builds a Shopify cart permalink:
-     https://{shopDomain}/cart/{variantId}:{qty},{variantId}:{qty}?channel=buy_button
-   That URL drops the user straight into your real Shopify-hosted checkout
-   (PCI compliant, payments handled by Shopify — nothing to wire on this site).
-
-   To get variant IDs:
-     Shopify Admin → Products → click the product → click the variant.
-     The variant ID is the long number in the URL: .../variants/44444444444
-   =========================================================================*/
-const SHOPIFY_CONFIG = {
-  shopDomain: "44tem8-us.myshopify.com", // <-- e.g. "siphaven.myshopify.com"
-  // Map our internal product id -> Shopify variant id.
-  variants: {
-    "sippers-whisper": "46781182673054",
-    "daybreak-light": "44444444402",
-    "forge-espresso": "44444444403",
-    "midnight-shift": "44444444404",
-    "single-origin-ethiopia": "44444444405",
-    "sippers-murmur": "46781181853854",
-    "v60-dripper": "44444444411",
-    "burr-grinder-pro": "44444444412",
-    "moka-pot-6cup": "44444444413",
-    "kettle-gooseneck": "44444444414",
-    "scale-precision": "44444444415",
-    "mug-matte-black": "44444444416",
-  },
-};
-
-const buildCheckoutUrl = (items) => {
-  if (!items.length) return "#";
-  const lines = items
-    .map((i) => `${SHOPIFY_CONFIG.variants[i.id] || "MISSING"}:${i.qty}`)
-    .join(",");
-  return `https://${SHOPIFY_CONFIG.shopDomain}/cart/${lines}`;
+const STRIPE_PRICE_IDS = {
+  'sippers-whisper': 'price_1TUJ0FLAf4l1OXJTpwFigruL',
+  'sippers-murmur': 'price_1TUJ0aLAf4l1OXJTnViQqXOZ',
 };
 
 /* ----- Brand colors (used inline; Tailwind core utilities elsewhere) ----- */
@@ -647,6 +614,7 @@ function Home({ go, addToCart }) {
 
 /* ===================== Product Card ===================== */
 function ProductCard({ product, go, addToCart }) {
+  const purchasable = Boolean(STRIPE_PRICE_IDS[product.id]);
   return (
     <div className="group cursor-pointer flex flex-col">
       <div
@@ -689,16 +657,25 @@ function ProductCard({ product, go, addToCart }) {
         )}
         <div className="mt-auto flex items-center justify-between pt-2">
           <div className="text-lg font-black" style={{ color: INK }}>${product.price}</div>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              addToCart(product.id, 1);
-            }}
-            className="px-4 py-2.5 text-[10px] tracking-[0.25em] uppercase font-bold transition-colors hover:opacity-90"
-            style={{ backgroundColor: INK, color: CANVAS_LIGHT }}
-          >
-            Add to cart
-          </button>
+          {purchasable ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                addToCart(product.id, 1);
+              }}
+              className="px-4 py-2.5 text-[10px] tracking-[0.25em] uppercase font-bold transition-colors hover:opacity-90"
+              style={{ backgroundColor: INK, color: CANVAS_LIGHT }}
+            >
+              Add to cart
+            </button>
+          ) : (
+            <span
+              className="px-4 py-2.5 text-[10px] tracking-[0.25em] uppercase font-bold opacity-40 cursor-not-allowed"
+              style={{ backgroundColor: "#888", color: CANVAS_LIGHT }}
+            >
+              Coming soon
+            </span>
+          )}
         </div>
       </div>
     </div>
