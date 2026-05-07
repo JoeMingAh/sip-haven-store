@@ -20,7 +20,7 @@ export default async function handler(req, res) {
 
   const { items } = req.body;
 
-  if (!items || items.length === 0) {
+  if (!items || !Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: 'No items provided' });
   }
 
@@ -34,12 +34,16 @@ export default async function handler(req, res) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   const origin = req.headers.origin || 'http://localhost:5174';
 
-  const session = await stripe.checkout.sessions.create({
-    mode: 'payment',
-    line_items,
-    success_url: `${origin}/?checkout=success`,
-    cancel_url: `${origin}/`,
-  });
-
-  return res.status(200).json({ url: session.url });
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      line_items,
+      success_url: `${origin}/?checkout=success`,
+      cancel_url: `${origin}/`,
+    });
+    return res.status(200).json({ url: session.url });
+  } catch (err) {
+    console.error('Stripe error:', err);
+    return res.status(500).json({ error: 'Payment session could not be created.' });
+  }
 }
