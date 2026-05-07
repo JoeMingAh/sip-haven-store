@@ -1314,6 +1314,9 @@ export default function SipHaven() {
   const [cart, setCart] = useState([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [exit, setExit] = useState({ shown: false, used: false });
+  const [checkoutSuccess, setCheckoutSuccess] = useState(
+    () => new URLSearchParams(window.location.search).get('checkout') === 'success'
+  );
 
   const go = (v) => {
     setView(v);
@@ -1357,6 +1360,28 @@ export default function SipHaven() {
 
   return (
     <div className="min-h-screen font-sans antialiased" style={{ backgroundColor: CANVAS_LIGHT, color: INK, fontFamily: "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Inter, sans-serif" }}>
+      {checkoutSuccess && (
+        <div
+          className="fixed top-0 inset-x-0 z-50 py-4 px-6 flex items-center justify-between"
+          style={{ backgroundColor: COPPER, color: CANVAS_LIGHT }}
+        >
+          <div className="flex items-center gap-3">
+            <Check size={18} />
+            <span className="text-sm font-bold tracking-wide">
+              Order placed! Check your email for a receipt.
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              setCheckoutSuccess(false);
+              window.history.replaceState({}, '', '/');
+            }}
+            className="opacity-80 hover:opacity-100"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      )}
       <Header go={go} cartCount={cartCount} openCart={() => setCartOpen(true)} view={view} />
       {content}
       <Footer go={go} />
