@@ -30,6 +30,7 @@ const COPPER_DEEP = "#8B5A2B";
 const CANVAS = "#F1EAD9";
 const CANVAS_LIGHT = "#F8F3E7";
 const INK = "#0E0D0B";
+const MUTED = "#888888";
 
 /* ----- Catalog ----- */
 const PRODUCTS = [
@@ -671,7 +672,7 @@ function ProductCard({ product, go, addToCart }) {
           ) : (
             <span
               className="px-4 py-2.5 text-[10px] tracking-[0.25em] uppercase font-bold opacity-40 cursor-not-allowed"
-              style={{ backgroundColor: "#888", color: CANVAS_LIGHT }}
+              style={{ backgroundColor: MUTED, color: CANVAS_LIGHT }}
             >
               Coming soon
             </span>
@@ -1137,16 +1138,31 @@ function CartDrawer({ open, close, cart, setCart }) {
   const subtotal = items.reduce((s, i) => s + i.product.price * i.qty, 0);
   const free = subtotal >= 40;
   const remaining = Math.max(0, 40 - subtotal);
+  const [checkingOut, setCheckingOut] = useState(false);
 
   const updateQty = (id, qty) => {
     if (qty <= 0) setCart(cart.filter((c) => c.id !== id));
     else setCart(cart.map((c) => (c.id === id ? { ...c, qty } : c)));
   };
 
-  const checkout = () => {
-    const url = buildCheckoutUrl(items);
-    if (url === "#") return;
-    window.open(url, "_blank", "noopener,noreferrer");
+  const checkout = async () => {
+    if (!items.length || checkingOut) return;
+    setCheckingOut(true);
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: items.map((i) => ({ id: i.id, qty: i.qty })),
+        }),
+      });
+      const { url, error } = await res.json();
+      if (error) throw new Error(error);
+      window.location.href = url;
+    } catch (err) {
+      console.error('Checkout failed:', err);
+      setCheckingOut(false);
+    }
   };
 
   if (!open) return null;
@@ -1226,9 +1242,15 @@ function CartDrawer({ open, close, cart, setCart }) {
               <span className="text-2xl font-black" style={{ color: INK }}>${subtotal.toFixed(2)}</span>
             </div>
             <div className="text-[11px] text-stone-600 mb-4">Shipping & taxes calculated at checkout. {free ? "Shipping is on us." : ""}</div>
-            <CopperButton size="lg" variant="ink" onClick={checkout} className="w-full">
-              <Lock size={14} /> Secure Checkout
-            </CopperButton>
+            <button
+              onClick={checkout}
+              disabled={checkingOut || !items.length}
+              className="w-full py-4 text-sm tracking-[0.2em] uppercase font-bold transition-opacity disabled:opacity-50"
+              style={{ backgroundColor: INK, color: CANVAS_LIGHT }}
+            >
+              <Lock size={14} className="inline mr-2" />
+              {checkingOut ? 'Redirecting...' : 'Secure Checkout'}
+            </button>
             <div className="mt-3 grid grid-cols-3 gap-2 text-[9px] tracking-[0.2em] uppercase font-bold text-stone-500 text-center">
               <div className="flex items-center gap-1.5 justify-center"><Lock size={11} /> Shopify</div>
               <div className="flex items-center gap-1.5 justify-center"><Truck size={11} /> 24h ship</div>
