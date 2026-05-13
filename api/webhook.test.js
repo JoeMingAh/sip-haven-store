@@ -52,8 +52,7 @@ describe('buildOrderEmail', () => {
 
   it('includes item name and quantity', () => {
     const { text } = buildOrderEmail(mockSession);
-    expect(text).toContain("Sipper's Whisper Espresso Blend");
-    expect(text).toContain('x2');
+    expect(text).toContain("Sipper's Whisper Espresso Blend x2");
   });
 
   it('shows "No address provided" when shipping_details is null', () => {
@@ -79,5 +78,20 @@ describe('buildOrderEmail', () => {
     expect(text).toContain('456 Oak Ave');
     expect(text).toContain('Seattle, WA 98101');
     expect(text).not.toContain('null');
+  });
+
+  it('includes all items when multiple are ordered', () => {
+    const session = {
+      ...mockSession,
+      line_items: {
+        data: [
+          { description: "Sipper's Whisper Espresso Blend", quantity: 1 },
+          { description: "Sipper's Murmur – Swiss Water® Decaf", quantity: 2 },
+        ],
+      },
+    };
+    const { text } = buildOrderEmail(session);
+    expect(text).toContain("Sipper's Whisper Espresso Blend x1");
+    expect(text).toContain("Sipper's Murmur – Swiss Water® Decaf x2");
   });
 });
