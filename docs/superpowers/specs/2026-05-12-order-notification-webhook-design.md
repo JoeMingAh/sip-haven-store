@@ -58,7 +58,7 @@ The function must export `export const config = { api: { bodyParser: false } }` 
 
 ## Email Format
 
-**From:** `orders@siphaven.com` (Resend sender — requires domain verification in Resend)  
+**From:** `orders@siphaven.com` (requires domain verification in Resend; use `onboarding@resend.dev` as fallback during initial testing before domain is verified)  
 **To:** `joseph@siphaven.com`  
 **Subject:** `New Order — {customer name}`
 
@@ -78,7 +78,7 @@ Items:
 - {product name} x{qty}
 - ...
 
-Total: ${amount}
+Total: ${amount}   ← amount_total from Stripe is in cents; divide by 100 before displaying (e.g. 2500 → $25.00)
 ```
 
 ---
