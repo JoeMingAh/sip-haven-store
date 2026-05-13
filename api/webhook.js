@@ -49,9 +49,16 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Collect raw body for Stripe signature verification
+  // Collect raw body for Stripe signature verification (cap at 1MB)
   const chunks = [];
-  for await (const chunk of req) chunks.push(chunk);
+  let totalSize = 0;
+  for await (const chunk of req) {
+    totalSize += chunk.length;
+    if (totalSize > 1_000_000) {
+      return res.status(413).json({ error: 'Payload too large' });
+    }
+    chunks.push(chunk);
+  }
   const rawBody = Buffer.concat(chunks);
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -72,10 +79,16 @@ export default async function handler(req, res) {
     return res.status(200).json({ received: true });
   }
 
-  const session = await stripe.checkout.sessions.retrieve(
-    event.data.object.id,
-    { expand: ['line_items.data.price.product'] }
-  );
+  let session;
+  try {
+    session = await stripe.checkout.sessions.retrieve(
+      event.data.object.id,
+      { expand: ['line_items.data.price.product'] }
+    );
+  } catch (err) {
+    console.error('Failed to retrieve Stripe session:', err);
+    return res.status(500).json({ error: 'Failed to retrieve session' });
+  }
 
   const { subject, text } = buildOrderEmail(session);
 
