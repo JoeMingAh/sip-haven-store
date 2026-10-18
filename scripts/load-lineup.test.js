@@ -112,6 +112,7 @@ const stripePrice = (id, cents, changes = {}) => ({
   unit_amount: cents,
   currency: 'usd',
   active: true,
+  tax_behavior: 'exclusive',
   product: 'prod_jasmine',
   ...changes,
 });
@@ -227,14 +228,26 @@ describe('syncLineup', () => {
           product: 'prod_new_1',
           unit_amount: 1250,
           currency: 'usd',
+          tax_behavior: 'exclusive',
           metadata: { slug: 'jasmine-dream', variant_id: 'loose-leaf-2-oz-tin' },
         },
         {
           product: 'prod_new_1',
           unit_amount: 900,
           currency: 'usd',
+          tax_behavior: 'exclusive',
           metadata: { slug: 'jasmine-dream', variant_id: 'tea-bags-20-bags' },
         },
+      ]);
+    });
+
+    it('creates every price tax exclusive, so Stripe Tax adds the tax at checkout', async () => {
+      const stripe = fakeStripe();
+      await syncLineup(lineupOf(tea(), coffee()), stripe);
+      expect(paramsOf(stripe.prices.create).map((params) => params.tax_behavior)).toEqual([
+        'exclusive',
+        'exclusive',
+        'exclusive',
       ]);
     });
   });
@@ -274,7 +287,7 @@ describe('syncLineup', () => {
       expect(stripe.products.update).not.toHaveBeenCalled();
     });
 
-    it('creates no new price when the amount has not changed', async () => {
+    it('creates no new price when the amount and tax setting are right', async () => {
       const stripe = fakeStripe({
         products: [stripeProduct()],
         prices: [stripePrice('price_tin', 1250), stripePrice('price_bags', 900)],
@@ -298,12 +311,33 @@ describe('syncLineup', () => {
           product: 'prod_jasmine',
           unit_amount: 1250,
           currency: 'usd',
+          tax_behavior: 'exclusive',
           metadata: { slug: 'jasmine-dream', variant_id: 'loose-leaf-2-oz-tin' },
         },
       ]);
       expect(argsOf(stripe.prices.update)).toEqual([['price_tin', { active: false }]]);
       // The new id replaces the old one; the unchanged variant keeps its own.
       expect(idsOf(lineup.products[0])).toEqual(['price_new_1', 'price_bags']);
+    });
+
+    it('replaces a price with the wrong tax setting, even at the right amount', async () => {
+      const stripe = fakeStripe({
+        products: [stripeProduct()],
+        prices: [stripePrice('price_tin', 1250, { tax_behavior: 'unspecified' })],
+      });
+      const { lineup } = await syncLineup(lineupOf(syncedTin()), stripe);
+
+      expect(paramsOf(stripe.prices.create)).toEqual([
+        {
+          product: 'prod_jasmine',
+          unit_amount: 1250,
+          currency: 'usd',
+          tax_behavior: 'exclusive',
+          metadata: { slug: 'jasmine-dream', variant_id: 'loose-leaf-2-oz-tin' },
+        },
+      ]);
+      expect(argsOf(stripe.prices.update)).toEqual([['price_tin', { active: false }]]);
+      expect(idsOf(lineup.products[0])).toEqual(['price_new_1']);
     });
 
     it('creates the new price before it turns the old one off', async () => {
@@ -335,6 +369,21 @@ describe('syncLineup', () => {
       [
         'the price is not in US dollars',
         stripePrice('price_tin', 1250, { currency: 'eur' }),
+        true,
+      ],
+      [
+        'the price is tax inclusive',
+        stripePrice('price_tin', 1250, { tax_behavior: 'inclusive' }),
+        true,
+      ],
+      [
+        'the price has no tax setting yet (unspecified)',
+        stripePrice('price_tin', 1250, { tax_behavior: 'unspecified' }),
+        true,
+      ],
+      [
+        'the price has no tax_behavior at all',
+        stripePrice('price_tin', 1250, { tax_behavior: undefined }),
         true,
       ],
     ])('makes a new price when %s', async (_why, existing, turnsOldOff) => {
@@ -631,6 +680,24 @@ describe('syncLineup', () => {
         stripePrice('price_tin', 1250, { currency: 'eur' }),
         'Jasmine Dream, 2 oz tin: price_tin is in EUR, not USD. ' +
           'Created price_new_1 and turned price_tin off.',
+      ],
+      [
+        'a tax inclusive price',
+        stripePrice('price_tin', 1250, { tax_behavior: 'inclusive' }),
+        'Jasmine Dream, 2 oz tin: price_tin has a different tax setting (inclusive), ' +
+          'not exclusive. Created price_new_1 and turned price_tin off.',
+      ],
+      [
+        'a price with no tax setting yet',
+        stripePrice('price_tin', 1250, { tax_behavior: 'unspecified' }),
+        'Jasmine Dream, 2 oz tin: price_tin has a different tax setting (unspecified), ' +
+          'not exclusive. Created price_new_1 and turned price_tin off.',
+      ],
+      [
+        'a price with no tax_behavior at all',
+        stripePrice('price_tin', 1250, { tax_behavior: undefined }),
+        'Jasmine Dream, 2 oz tin: price_tin has a different tax setting (not set), ' +
+          'not exclusive. Created price_new_1 and turned price_tin off.',
       ],
     ])('explains why it replaced a price: %s', async (_case, existing, expected) => {
       const prices = existing ? [existing] : [];

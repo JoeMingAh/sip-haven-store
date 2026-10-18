@@ -6,10 +6,10 @@
 //   npm run load-lineup -- --live   needed to use a live key, which changes the real shop
 //
 // It is safe to run again. A product is found again by its slug and updated, and a
-// price is kept for as long as it has the right amount. Stripe prices cannot be
-// edited, so a new amount gets a new price and the old one is turned off. Nothing
-// is deleted. Nothing is sent to Stripe unless the lineup passes validateLineup and
-// none of its products is still a sample row from lineup-template.csv.
+// price is kept for as long as it has the right amount and tax setting. Stripe prices
+// cannot be edited, so a new amount gets a new price and the old one is turned off.
+// Nothing is deleted. Nothing is sent to Stripe unless the lineup passes validateLineup
+// and none of its products is still a sample row from lineup-template.csv.
 import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import Stripe from 'stripe';
@@ -23,6 +23,11 @@ const EXAMPLE_PREFIX = 'example-';
 
 // Stripe secret keys (sk_) and restricted keys (rk_), for test or live mode.
 const KEY_PATTERN = /^(?:sk|rk)_(test|live)_/;
+
+// Every price is created tax exclusive: sales tax is added on top at checkout, which is
+// how US prices work. Stripe Tax needs each price to say which it is. A price that says
+// something else, or nothing, counts as changed and is replaced like one with a new amount.
+const TAX_BEHAVIOR = 'exclusive';
 
 // Something the person running this can fix, such as a bad lineup or the wrong key.
 // The message says how. Any other error (a network failure, say) came from Stripe.
@@ -86,7 +91,8 @@ async function getPrice(stripe, id) {
   }
 }
 
-// Why an existing price cannot be used for this amount, or undefined if it can.
+// Why an existing price cannot be used for this amount and tax setting, or undefined if
+// it can.
 function whyNotUsable(price, cents) {
   if (price.active === false) return 'is already turned off in Stripe';
   if (price.currency && price.currency !== 'usd') {
@@ -95,6 +101,9 @@ function whyNotUsable(price, cents) {
   if (price.unit_amount !== cents) {
     const was = Number.isInteger(price.unit_amount) ? usd(price.unit_amount) : 'not a fixed amount';
     return `is ${was}, not ${usd(cents)}`;
+  }
+  if (price.tax_behavior !== TAX_BEHAVIOR) {
+    return `has a different tax setting (${price.tax_behavior ?? 'not set'}), not ${TAX_BEHAVIOR}`;
   }
   return undefined;
 }
@@ -144,6 +153,7 @@ async function syncVariant(stripe, product, productId, variant, current, report,
     product: productId,
     unit_amount: variant.price_cents,
     currency: 'usd',
+    tax_behavior: TAX_BEHAVIOR,
     metadata: { slug: product.slug, variant_id: variant.id },
   });
   variant.stripe_price_id = created.id;
