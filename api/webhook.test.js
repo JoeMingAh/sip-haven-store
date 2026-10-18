@@ -179,6 +179,41 @@ describe('buildOrderEmail items and tax', () => {
   });
 });
 
+// The Stripe v22 types for a Checkout Session have no shipping_details of their
+// own; the address is under collected_information.shipping_details (Ruling R15).
+describe('buildOrderEmail shipping address source', () => {
+  it('reads the address from collected_information.shipping_details', () => {
+    const session = {
+      ...mockSession,
+      shipping_details: undefined,
+      collected_information: {
+        shipping_details: {
+          name: 'Jane Doe',
+          address: {
+            line1: '789 Pine St',
+            line2: null,
+            city: 'Austin',
+            state: 'TX',
+            postal_code: '78701',
+          },
+        },
+      },
+    };
+    const { text } = buildOrderEmail(session);
+    expect(text).toContain('789 Pine St');
+    expect(text).toContain('Austin, TX 78701');
+    expect(text).not.toContain('No address provided');
+  });
+
+  it('falls back to session.shipping_details when collected_information has none', () => {
+    const session = { ...mockSession, collected_information: { shipping_details: null } };
+    const { text } = buildOrderEmail(session);
+    expect(text).toContain('123 Main St');
+    expect(text).toContain('Portland, OR 97201');
+    expect(text).not.toContain('No address provided');
+  });
+});
+
 const EVENT_ID = 'evt_test_123';
 const SESSION_ID = 'cs_test_123';
 

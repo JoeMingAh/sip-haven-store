@@ -28,7 +28,12 @@ function formatLineItem(item) {
 export function buildOrderEmail(session) {
   const name = session.customer_details?.name || 'Unknown';
   const email = session.customer_details?.email || 'Unknown';
-  const address = session.shipping_details?.address;
+  // Stripe's current API (the v22 SDK types) puts the address at
+  // session.collected_information.shipping_details and has no session.shipping_details.
+  // Read the new place first and fall back to the old one, so a session from an
+  // older API version still prints its address (Ruling R15).
+  const shipping = session.collected_information?.shipping_details ?? session.shipping_details;
+  const address = shipping?.address;
 
   const addressText = address
     ? [
