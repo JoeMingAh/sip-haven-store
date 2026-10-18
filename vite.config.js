@@ -5,5 +5,11 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: 'node',
+    include: [
+      'lib/**/*.test.js',
+      'scripts/**/*.test.js',
+      'api/**/*.test.js',
+      'src/**/*.test.jsx',
+    ],
   },
 })
