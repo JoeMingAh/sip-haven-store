@@ -113,7 +113,12 @@ Signups must actually be captured (today's buttons do nothing). Builder's call o
 
 Component structure, router choice, filter UX details, animation, placeholder art style, exact copy drafts (Joseph approves final copy), test approach for new code.
 
+## Discounts (Joseph's call)
+
+"We can have a signup discount only for a select few." Signup itself gives no discount; it only saves the email. Discounts are hand-picked: Stripe promotion codes that Joseph creates (or asks Claude to create, with his yes) and gives to the people he chooses. Checkout enables `allow_promotion_codes` so shoppers can enter a code. Nothing is auto-issued or auto-emailed. (Interpretation of "select few" is Claude's; confirm if wrong.)
+
+Status: approved by Joseph 2026-10-18.
+
 ## Open items (Joseph to decide)
 
-- Free-shipping threshold and shipping rate (placeholder $50 in mockups).
-- Whether to offer a first-order discount for email signup (placeholder 10%) — it's a spend decision.
+- Free-shipping threshold and shipping rate (placeholder $50 in mockups; one config value).
