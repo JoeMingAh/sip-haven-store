@@ -4,6 +4,27 @@ import { Resend } from 'resend';
 // Vercel must NOT parse the body — Stripe signature verification needs raw bytes
 export const config = { api: { bodyParser: false } };
 
+// Where order emails go when ORDER_NOTIFY_EMAIL is not set.
+const DEFAULT_NOTIFY_EMAIL = 'joseph@siphaven.com';
+
+// Integer cents as dollars, like $25.00.
+const usd = (cents) => `$${(cents / 100).toFixed(2)}`;
+
+// One order line. A price made by load-lineup carries its variant id in its
+// metadata, and the line description is only the product name, so such a line
+// reads "Name (variant-id) × 2". A line with no variant id (an order from before
+// the lineup, or a price made by hand) keeps the plain "Name x2" form.
+function formatLineItem(item) {
+  const name = item.description || 'Unknown item';
+  const variantId = item.price?.metadata?.variant_id;
+  return variantId
+    ? `- ${name} (${variantId}) × ${item.quantity}`
+    : `- ${name} x${item.quantity}`;
+}
+
+// `session.line_items` is the order's line items, the list that
+// stripe.checkout.sessions.listLineItems returns. When it is missing the email
+// still goes out and says so, because the order notice must not be lost.
 export function buildOrderEmail(session) {
   const name = session.customer_details?.name || 'Unknown';
   const email = session.customer_details?.email || 'Unknown';
@@ -19,11 +40,12 @@ export function buildOrderEmail(session) {
         .join('\n')
     : 'No address provided';
 
-  const itemsText = (session.line_items?.data || [])
-    .map((item) => `- ${item.description || 'Unknown item'} x${item.quantity}`)
-    .join('\n');
+  const itemsText = session.line_items
+    ? (session.line_items.data || []).map(formatLineItem).join('\n')
+    : 'Items could not be loaded from Stripe. Check this order in the Stripe dashboard.';
 
-  const total = `$${(session.amount_total / 100).toFixed(2)}`;
+  const tax = usd(session.total_details?.amount_tax ?? 0);
+  const total = usd(session.amount_total);
 
   return {
     subject: `New Order — ${name}`,
@@ -39,6 +61,7 @@ export function buildOrderEmail(session) {
       'Items:',
       itemsText,
       '',
+      `Tax: ${tax}`,
       `Total: ${total}`,
     ].join('\n'),
   };
@@ -81,28 +104,52 @@ export default async function handler(req, res) {
 
   let session;
   try {
-    session = await stripe.checkout.sessions.retrieve(
-      event.data.object.id,
-      { expand: ['line_items.data.price.product'] }
-    );
+    // The line items come from listLineItems below, so nothing is expanded here.
+    session = await stripe.checkout.sessions.retrieve(event.data.object.id);
   } catch (err) {
     console.error('Failed to retrieve Stripe session:', err);
     return res.status(500).json({ error: 'Failed to retrieve session' });
   }
 
-  const { subject, text } = buildOrderEmail(session);
+  // Failing to list the items must not lose the order notice: log it, and the
+  // email says the items are missing. A Stripe list returns 10 by default and 100
+  // at most, so ask for 100 to keep a big cart from being cut off.
+  let lineItems = null;
+  try {
+    lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
+      expand: ['data.price'],
+      limit: 100,
+    });
+  } catch (err) {
+    console.error('Failed to list line items:', err);
+  }
+
+  const { subject, text } = buildOrderEmail({ ...session, line_items: lineItems });
 
   const resend = new Resend(process.env.RESEND_API_KEY);
 
+  let sendError;
   try {
-    await resend.emails.send({
-      from: 'orders@siphaven.com',
-      to: 'joseph@siphaven.com',
-      subject,
-      text,
-    });
+    // event.id is the same on every delivery of this event. When Stripe retries
+    // it, Resend sees the same idempotency key and does not send a second email.
+    const result = await resend.emails.send(
+      {
+        from: 'orders@siphaven.com',
+        to: process.env.ORDER_NOTIFY_EMAIL || DEFAULT_NOTIFY_EMAIL,
+        subject,
+        text,
+      },
+      { idempotencyKey: event.id }
+    );
+    // resend v6 hands a failed send back as { error } and does not throw.
+    sendError = result?.error;
   } catch (err) {
-    console.error('Failed to send email:', err);
+    sendError = err;
+  }
+  if (sendError) {
+    // A 500 makes Stripe deliver the event again, and the idempotency key keeps
+    // that retry from double-sending if the first attempt did go through.
+    console.error('Failed to send email:', sendError);
     return res.status(500).json({ error: 'Failed to send notification email' });
   }
 
