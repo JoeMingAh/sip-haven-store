@@ -514,6 +514,39 @@ describe('LINEUP-GUIDE.md', () => {
     expect(guide).toMatch(/filter[^\n]*`flavor_notes`|`flavor_notes`[^\n]*filter/i);
   });
 
+  describe('the "After the CSV" section', () => {
+    const start = guide.indexOf('\n## After the CSV\n');
+    const section = start === -1 ? '' : guide.slice(start);
+
+    it('is the last section of the guide', () => {
+      expect(start).toBeGreaterThan(-1);
+      expect(section.slice('\n## After the CSV\n'.length)).not.toMatch(/^## /m);
+    });
+
+    it('says to run lineup:csv and then load-lineup', () => {
+      expect(section).toContain('`npm run lineup:csv -- ');
+      expect(section).toContain('`npm run load-lineup`');
+      expect(section.indexOf('lineup:csv')).toBeLessThan(section.indexOf('npm run load-lineup'));
+    });
+
+    it('says to commit src/data/lineup.json and then redeploy', () => {
+      const commit = section.search(/commit[^\n]*`src\/data\/lineup\.json`/i);
+      const redeploy = section.search(/redeploy/i);
+      expect(commit).toBeGreaterThan(-1);
+      expect(redeploy).toBeGreaterThan(commit);
+    });
+
+    it('keeps live prices behind --live, a live key and Joseph\'s yes', () => {
+      expect(section).toContain('`npm run load-lineup -- --live`');
+      expect(section).toMatch(/live key/i);
+      expect(section).toMatch(/only[^\n]*Joseph[^\n]*yes|Joseph[^\n]*yes/i);
+    });
+
+    it('is short', () => {
+      expect(section.split('\n').length).toBeLessThanOrEqual(20);
+    });
+  });
+
   it('uses plain ASCII only', () => {
     // eslint-disable-next-line no-control-regex
     expect(guide).toMatch(/^[\x09\x0A\x0D\x20-\x7E]*$/);

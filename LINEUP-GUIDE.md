@@ -60,3 +60,12 @@ Send the finished CSV, and the photos, back. To load it into the shop:
 
 1. `npm run lineup:csv -- path/to/lineup.csv` checks the sheet, lists every problem in plain English, and writes `src/data/lineup.json` only when everything is fine.
 2. `npm run load-lineup` creates the matching products and prices in Stripe. It uses the key in `.env.local` and refuses a live key unless you add `--live`, so use a test key until the shop is ready. A product can only be bought once it has been through this step.
+
+## After the CSV
+
+This part is for Claude, or whoever loads the lineup. It is not for the person filling in the sheet.
+
+1. Run `npm run lineup:csv -- file.csv`, then `npm run load-lineup`, as above. Use a Stripe test key in `.env.local`.
+2. Commit `src/data/lineup.json`. Loading wrote the Stripe price ids into it, and the shop and its checkout read that file.
+3. Redeploy. The lineup is part of the build, so the live site does not change until it is deployed again.
+4. Live prices are a separate step, and only with Joseph's yes: put a live key in `.env.local` and run `npm run load-lineup -- --live`. Without `--live` the command refuses a live key.
