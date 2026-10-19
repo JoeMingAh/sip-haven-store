@@ -1,6 +1,7 @@
 import Layout from './components/Layout.jsx';
 import Home from './pages/Home.jsx';
 import NotFound from './pages/NotFound.jsx';
+import Shop from './pages/Shop.jsx';
 
 // A page that is not built yet shows its name as a heading. Building a page means
 // swapping its stub() for the real component here.
@@ -18,8 +19,8 @@ export const routes = [
     element: <Layout />,
     children: [
       { index: true, element: <Home /> },
-      { path: 'tea', element: stub('Tea') },
-      { path: 'coffee', element: stub('Coffee') },
+      { path: 'tea', element: <Shop category="tea" /> },
+      { path: 'coffee', element: <Shop category="coffee" /> },
       { path: 'products/:slug', element: stub('Product') },
       { path: 'quiz', element: stub('Quiz') },
       { path: 'learn', element: stub('Learn') },
