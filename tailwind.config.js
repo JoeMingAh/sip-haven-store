@@ -25,6 +25,20 @@ export default {
                 serif: ["Lora", "ui-serif", "Georgia", "serif"],
                 sans: ['"Nunito Sans"', "ui-sans-serif", "system-ui", "sans-serif"],
             },
+            // The cart drawer fades its backdrop in and slides in from the right. Use
+            // them as motion-safe:animate-fade-in / motion-safe:animate-slide-in-right
+            // so nothing moves for a shopper who has asked for less motion.
+            keyframes: {
+                "fade-in": { from: { opacity: "0" }, to: { opacity: "1" } },
+                "slide-in-right": {
+                    from: { transform: "translateX(100%)" },
+                    to: { transform: "translateX(0)" },
+                },
+            },
+            animation: {
+                "fade-in": "fade-in 200ms ease-out",
+                "slide-in-right": "slide-in-right 250ms ease-out",
+            },
         },
     },
     plugins: [],

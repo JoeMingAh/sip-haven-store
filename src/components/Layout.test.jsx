@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { createMemoryRouter, matchRoutes, RouterProvider } from 'react-router-dom';
 import { routes } from '../router.jsx';
 
@@ -43,6 +43,13 @@ describe('header', () => {
     renderAt('/tea');
     const header = screen.getByRole('banner');
     expect(within(header).getByRole('link', { name: 'Sip Haven' })).toHaveAttribute('href', '/');
+  });
+
+  it('has a Cart button that opens the cart drawer', () => {
+    renderAt('/tea');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    fireEvent.click(within(screen.getByRole('banner')).getByRole('button', { name: 'Cart' }));
+    expect(screen.getByRole('dialog', { name: 'Your cart' })).toBeInTheDocument();
   });
 });
 

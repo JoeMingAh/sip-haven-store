@@ -1,5 +1,7 @@
 import { Link, NavLink } from 'react-router-dom';
 import { ShoppingBag } from 'lucide-react';
+import { isStoreOpen } from '../../lib/store-config.js';
+import { useCart } from '../cart/CartContext.jsx';
 import { headerLinks } from './navLinks.js';
 
 const linkClass = ({ isActive }) =>
@@ -9,17 +11,31 @@ const linkClass = ({ isActive }) =>
       : 'border-transparent text-ink hover:text-sage-deep'
   }`;
 
-// The cart opens a drawer once the cart exists. Until then it is a plain link to
-// the /cart route, so swapping in the drawer only touches this component.
+// Opens the cart drawer (CartDrawer, in Layout) and shows how many items are in the
+// cart. A closed store shows no count, whatever an old visit left in the cart.
 function CartButton() {
+  const { count, open } = useCart();
+  const items = isStoreOpen() ? count : 0;
+
   return (
-    <Link
-      to="/cart"
+    <button
+      type="button"
+      onClick={() => open()}
+      aria-haspopup="dialog"
+      aria-label={items > 0 ? `Cart, ${items} ${items === 1 ? 'item' : 'items'}` : 'Cart'}
       className="col-start-2 row-start-1 inline-flex min-h-11 items-center gap-2 justify-self-end rounded-full bg-sage-tint px-4 text-sm font-semibold text-sage-deep hover:bg-wood md:col-start-3"
     >
       <ShoppingBag aria-hidden="true" size={18} />
       Cart
-    </Link>
+      {items > 0 && (
+        <span
+          aria-hidden="true"
+          className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-sage-deep px-1.5 text-xs font-bold text-cream"
+        >
+          {items}
+        </span>
+      )}
+    </button>
   );
 }
 

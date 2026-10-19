@@ -2,13 +2,25 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import SignupForm from './SignupForm.jsx';
 
+// What the confirmation says depends on whether the shop is open, so each test
+// sets the flag here. It starts closed, the state the original text was written for.
+const store = vi.hoisted(() => ({ open: false }));
+vi.mock('../../lib/store-config.js', async (importOriginal) => ({
+  ...(await importOriginal()),
+  isStoreOpen: () => store.open,
+}));
+
+// While the shop is closed: the first collection is still on its way.
 const SUCCESS_TEXT =
   "You're on the list. We'll let you know the moment our first collection is ready.";
+// Once the shop is open, "the moment our first collection is ready" would read stale.
+const OPEN_SUCCESS_TEXT = "You're on the list. We'll keep you posted on new teas and coffees.";
 const GENERIC_ERROR = 'Something went wrong. Please try again.';
 
 // Every test gets its own fake fetch, so nothing here can reach the network.
 let fetchMock;
 beforeEach(() => {
+  store.open = false;
   fetchMock = vi.fn();
   vi.stubGlobal('fetch', fetchMock);
 });
@@ -131,6 +143,48 @@ describe('SignupForm: success', () => {
     expect(within(status).getByText(SUCCESS_TEXT)).toBeInTheDocument();
     expect(screen.queryByLabelText('Email address')).not.toBeInTheDocument();
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('keeps the first-collection wording while the shop is closed', async () => {
+    store.open = false;
+    fetchMock.mockResolvedValue(reply(200, { ok: true }));
+    render(<SignupForm />);
+    submit('jane@example.com');
+    await screen.findByText(SUCCESS_TEXT);
+    expect(screen.queryByText(OPEN_SUCCESS_TEXT)).not.toBeInTheDocument();
+  });
+
+  it('says "new teas and coffees" once the shop is open', async () => {
+    store.open = true;
+    fetchMock.mockResolvedValue(reply(200, { ok: true }));
+    render(<SignupForm />);
+    const status = screen.getByRole('status');
+
+    submit('jane@example.com');
+    await screen.findByText(OPEN_SUCCESS_TEXT);
+
+    expect(screen.getByRole('status')).toBe(status);
+    expect(status).toHaveTextContent(OPEN_SUCCESS_TEXT);
+    expect(screen.queryByText(SUCCESS_TEXT)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Email address')).not.toBeInTheDocument();
+  });
+
+  it('does not change what it posts when the shop is open', async () => {
+    store.open = true;
+    fetchMock.mockResolvedValue(reply(200, { ok: true }));
+    render(<SignupForm interest="tea" />);
+    submit('jane@example.com');
+    await screen.findByText(OPEN_SUCCESS_TEXT);
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/subscribe');
+    expect(postedBody()).toEqual({ email: 'jane@example.com', interest: 'tea' });
+  });
+
+  it('shows the same error text whether the shop is open or not', async () => {
+    store.open = true;
+    fetchMock.mockResolvedValue(reply(400, { error: 'Please enter a valid email.' }));
+    render(<SignupForm />);
+    submit('not-an-email');
+    expect(await screen.findByText('Please enter a valid email.')).toBeInTheDocument();
   });
 });
 

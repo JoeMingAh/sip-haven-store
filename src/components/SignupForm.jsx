@@ -1,25 +1,18 @@
 import { useId, useState } from 'react';
 import { Check } from 'lucide-react';
+import { isStoreOpen } from '../../lib/store-config.js';
+import { GENERIC_ERROR, errorFrom } from '../apiError.js';
 
+// While the shop is closed the list is how people hear about the first collection.
 const SUCCESS_MESSAGE =
   "You're on the list. We'll let you know the moment our first collection is ready.";
-const GENERIC_ERROR = 'Something went wrong. Please try again.';
-
-// The error text /api/subscribe sent back, or the generic message when it sent
-// none that can be shown (an empty body, or a gateway error page that is not JSON).
-async function errorFrom(response) {
-  try {
-    const body = await response.json();
-    if (typeof body?.error === 'string' && body.error.trim() !== '') return body.error;
-  } catch {
-    // Not JSON, so there is no text to show.
-  }
-  return GENERIC_ERROR;
-}
+// Once the shop is open that wording would read stale.
+const OPEN_SUCCESS_MESSAGE = "You're on the list. We'll keep you posted on new teas and coffees.";
 
 /**
  * Email signup. Posts { email, interest? } to /api/subscribe and shows what comes
- * back: the confirmation, or the API's own error text.
+ * back: the confirmation, or the API's own error text. The confirmation depends on
+ * whether the shop is open (see the two messages above).
  *
  * The form turns off the browser's own checking (noValidate). The server decides
  * what a valid address is, so the visitor always sees its one message, styled like
@@ -38,7 +31,7 @@ export default function SignupForm({ interest }) {
 
   const isSending = status === 'sending';
   const isDone = status === 'done';
-  const message = isDone ? SUCCESS_MESSAGE : error;
+  const message = isDone ? (isStoreOpen() ? OPEN_SUCCESS_MESSAGE : SUCCESS_MESSAGE) : error;
 
   async function handleSubmit(event) {
     event.preventDefault();
