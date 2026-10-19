@@ -48,6 +48,16 @@ describe('Footer', () => {
     expect(screen.getByRole('link', { name: 'Learn' })).toHaveAttribute('href', '/learn');
   });
 
+  it('invites an email signup', () => {
+    renderFooter();
+    const footer = screen.getByRole('contentinfo');
+    expect(
+      within(footer).getByRole('heading', { level: 2, name: 'Stay in the loop' }),
+    ).toBeInTheDocument();
+    expect(within(footer).getByLabelText('Email address')).toHaveAttribute('type', 'email');
+    expect(within(footer).getByRole('button', { name: 'Join the list' })).toBeInTheDocument();
+  });
+
   it('shows the brand and the current year', () => {
     renderFooter();
     const footer = screen.getByRole('contentinfo');

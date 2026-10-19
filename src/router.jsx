@@ -1,4 +1,5 @@
 import Layout from './components/Layout.jsx';
+import Home from './pages/Home.jsx';
 import NotFound from './pages/NotFound.jsx';
 
 // A page that is not built yet shows its name as a heading. Building a page means
@@ -16,7 +17,7 @@ export const routes = [
     path: '/',
     element: <Layout />,
     children: [
-      { index: true, element: stub('Home') },
+      { index: true, element: <Home /> },
       { path: 'tea', element: stub('Tea') },
       { path: 'coffee', element: stub('Coffee') },
       { path: 'products/:slug', element: stub('Product') },

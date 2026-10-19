@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { footerLinks } from './navLinks.js';
+import SignupForm from './SignupForm.jsx';
 
 const YEAR = new Date().getFullYear();
 
@@ -34,6 +35,14 @@ export default function Footer() {
           <p className="mt-3 max-w-xs text-sm leading-relaxed">
             Tea and coffee for slow mornings and long talks.
           </p>
+
+          <div className="mt-8 max-w-md">
+            <h2 className="font-serif text-lg font-semibold text-sage-deep">Stay in the loop</h2>
+            <p className="mb-4 mt-1 text-pretty text-sm leading-relaxed">
+              Leave your email and we'll let you know when something new is brewing.
+            </p>
+            <SignupForm />
+          </div>
         </div>
 
         <nav aria-label="Footer" className="grid grid-cols-2 gap-8">
