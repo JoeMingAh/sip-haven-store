@@ -10,6 +10,13 @@ const DEFAULT_NOTIFY_EMAIL = 'joseph@siphaven.com';
 // Integer cents as dollars, like $25.00.
 const usd = (cents) => `$${(cents / 100).toFixed(2)}`;
 
+// What Resend answers when an idempotency key it has already seen comes with a
+// different email. The key is the Stripe event id, so it means this event's notice went
+// out on an earlier delivery and this one's wording has changed since (Resend v6 hands
+// the error back as { name, statusCode, message }; the code is checked too).
+const REUSED_KEY = 'invalid_idempotent_request';
+const isAlreadySent = (error) => error?.name === REUSED_KEY || error?.code === REUSED_KEY;
+
 // One order line. A price made by load-lineup carries its variant id in its
 // metadata, and the line description is only the product name, so such a line
 // reads "Name (variant-id) × 2". A line with no variant id (an order from before
@@ -152,6 +159,12 @@ export default async function handler(req, res) {
     sendError = err;
   }
   if (sendError) {
+    if (isAlreadySent(sendError)) {
+      // The notice is out already. Another 500 would only make Stripe deliver this
+      // event again, and again, for days, and every try would be refused the same way.
+      console.warn(`Order email for ${event.id} was already sent; not sending it again.`);
+      return res.status(200).json({ received: true });
+    }
     // A 500 makes Stripe deliver the event again, and the idempotency key keeps
     // that retry from double-sending if the first attempt did go through.
     console.error('Failed to send email:', sendError);

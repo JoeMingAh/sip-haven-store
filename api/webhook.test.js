@@ -373,6 +373,78 @@ describe('webhook handler', () => {
     expect(log.mock.calls[0]).toContain(failure);
   });
 
+  describe('when Resend says this event\'s idempotency key was already used', () => {
+    // Stripe delivers an event again after a 500. If the first delivery did send the
+    // email, but this delivery's email is not word for word the same (the order has been
+    // looked at again since), Resend refuses it with invalid_idempotent_request. The
+    // notice is already out, so answering 500 would only make Stripe try again for days.
+    const alreadyUsed = {
+      name: 'invalid_idempotent_request',
+      statusCode: 409,
+      message: 'This idempotency key has already been used on a request with a different payload.',
+    };
+
+    it.each([
+      ['name', alreadyUsed],
+      ['code', { code: 'invalid_idempotent_request', statusCode: 409, message: 'Already used.' }],
+    ])('answers 200, as already sent, when the error is given by %s', async (_how, failure) => {
+      const errorLog = silenceErrorLog();
+      const warnLog = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      resend.sendEmail.mockResolvedValue({ data: null, error: failure });
+
+      const res = await deliver();
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({ received: true });
+      // Tried once, and not again.
+      expect(resend.sendEmail).toHaveBeenCalledTimes(1);
+      // A note in the log, but not an error.
+      expect(errorLog).not.toHaveBeenCalled();
+      expect(warnLog).toHaveBeenCalledTimes(1);
+      expect(warnLog.mock.calls[0].join(' ')).toContain(EVENT_ID);
+    });
+
+    it('answers 200 when the error is thrown instead of returned', async () => {
+      const errorLog = silenceErrorLog();
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      resend.sendEmail.mockRejectedValue(Object.assign(new Error(alreadyUsed.message), alreadyUsed));
+
+      const res = await deliver();
+
+      expect(res.statusCode).toBe(200);
+      expect(res.body).toEqual({ received: true });
+      expect(errorLog).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['concurrent_idempotent_requests', 409],
+      ['rate_limit_exceeded', 429],
+      ['internal_server_error', 500],
+      ['validation_error', 422],
+    ])('still answers 500 for %s, so Stripe retries', async (name, statusCode) => {
+      const errorLog = silenceErrorLog();
+      resend.sendEmail.mockResolvedValue({ data: null, error: { name, statusCode, message: 'x' } });
+
+      const res = await deliver();
+
+      expect(res.statusCode).toBe(500);
+      expect(res.body).toEqual({ error: 'Failed to send notification email' });
+      expect(errorLog).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not mistake an error that only mentions the name for it', async () => {
+      silenceErrorLog();
+      resend.sendEmail.mockResolvedValue({
+        data: null,
+        error: { name: 'application_error', message: 'invalid_idempotent_request is not what this is' },
+      });
+
+      const res = await deliver();
+
+      expect(res.statusCode).toBe(500);
+    });
+  });
+
   it('answers 500, so Stripe retries, when sending the email throws', async () => {
     const log = silenceErrorLog();
     const failure = new Error('socket hang up');
