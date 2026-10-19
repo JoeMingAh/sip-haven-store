@@ -67,6 +67,41 @@ export function shippingOptions(subtotalCents) {
   ];
 }
 
+// A local dev server: http, localhost, and a port.
+const LOCALHOST_ORIGIN = /^http:\/\/localhost:\d{1,5}$/;
+
+/**
+ * The address Stripe sends the shopper back to after Checkout, with no path: the start
+ * of success_url and cancel_url.
+ *
+ * The Origin header is whatever the caller says it is, so it is only used when it is
+ * exactly a place this site is served from: SITE_URL, this deployment's own address
+ * (https://VERCEL_URL, which is how a preview deploy gets back to itself) or, outside
+ * production, a localhost address with a port. Any other Origin, or none, gets SITE_URL.
+ * Throws when SITE_URL is not set and the Origin is not one of the others, because the
+ * shopper then has nowhere safe to go back to.
+ */
+export function returnOrigin(requestOrigin) {
+  // An Origin never ends in a slash, so one on SITE_URL would stop it ever matching.
+  const siteUrl = (process.env.SITE_URL ?? '').trim().replace(/\/+$/, '');
+  const vercelUrl = (process.env.VERCEL_URL ?? '').trim();
+  const deploymentUrl = vercelUrl ? `https://${vercelUrl}` : '';
+
+  const isTrusted =
+    typeof requestOrigin === 'string' &&
+    requestOrigin !== '' &&
+    (requestOrigin === siteUrl ||
+      requestOrigin === deploymentUrl ||
+      (process.env.VERCEL_ENV !== 'production' && LOCALHOST_ORIGIN.test(requestOrigin)));
+  if (isTrusted) return requestOrigin;
+
+  if (siteUrl) return siteUrl;
+  throw new Error(
+    'SITE_URL is not set, and the request Origin is not an address this site is served from, ' +
+      'so there is nowhere to send the shopper back to. Set SITE_URL, like https://siphaven.com.',
+  );
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -83,10 +118,13 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'No items provided' });
   }
 
-  const origin = req.headers.origin || 'http://localhost:5174';
-
   try {
     const { line_items, subtotal_cents } = buildLineItems(items);
+
+    // After the cart check, so a bad cart is still a 400, and before the Stripe client,
+    // so a site with nowhere to send the shopper back to never calls Stripe. If SITE_URL
+    // is missing this throws, and the catch below logs it and answers the generic 500.
+    const origin = returnOrigin(req.headers.origin);
 
     // Inside the try because the client throws when the secret key is missing.
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);

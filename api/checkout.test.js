@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import handler, { buildLineItems, shippingOptions, CheckoutError } from './checkout.js';
+import handler, {
+  buildLineItems,
+  shippingOptions,
+  returnOrigin,
+  CheckoutError,
+} from './checkout.js';
 import { FREE_SHIPPING_CENTS, FLAT_SHIPPING_CENTS } from '../lib/store-config.js';
 
 // No test here can reach Stripe. The stripe module is replaced by a fake whose
@@ -62,7 +67,9 @@ vi.mock('../src/data/lineup.json', () => ({
   },
 }));
 
-const ORIGIN = 'https://siphaven.com';
+// The site's own address (SITE_URL), and the Origin a shopper on the site posts from.
+const SITE_URL = 'https://siphaven.com';
+const ORIGIN = SITE_URL;
 const SESSION_URL = 'https://checkout.stripe.test/session';
 
 // Cart lines as the browser sends them.
@@ -104,6 +111,9 @@ beforeEach(() => {
   vi.stubEnv('STORE_OPEN', 'true');
   vi.stubEnv('VITE_STORE_OPEN', undefined);
   vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_fake');
+  vi.stubEnv('SITE_URL', SITE_URL);
+  vi.stubEnv('VERCEL_URL', undefined);
+  vi.stubEnv('VERCEL_ENV', undefined);
   stripe.Stripe.mockReset();
   stripe.createSession.mockReset();
   stripe.createSession.mockResolvedValue({ url: SESSION_URL });
@@ -253,6 +263,107 @@ describe('shippingOptions', () => {
   });
 });
 
+describe('returnOrigin', () => {
+  const DEPLOYMENT = 'sip-haven-store-abc123.vercel.app';
+
+  it('uses the request Origin when it is SITE_URL', () => {
+    expect(returnOrigin(SITE_URL)).toBe(SITE_URL);
+  });
+
+  it("uses the request Origin when it is this deployment's own address (VERCEL_URL)", () => {
+    vi.stubEnv('VERCEL_URL', DEPLOYMENT);
+    expect(returnOrigin(`https://${DEPLOYMENT}`)).toBe(`https://${DEPLOYMENT}`);
+  });
+
+  it.each([undefined, 'preview', 'development'])(
+    'uses a localhost Origin with a port when VERCEL_ENV is %s',
+    (env) => {
+      vi.stubEnv('VERCEL_ENV', env);
+      expect(returnOrigin('http://localhost:5174')).toBe('http://localhost:5174');
+      expect(returnOrigin('http://localhost:3000')).toBe('http://localhost:3000');
+    },
+  );
+
+  it('does not use a localhost Origin in production', () => {
+    vi.stubEnv('VERCEL_ENV', 'production');
+    expect(returnOrigin('http://localhost:5174')).toBe(SITE_URL);
+  });
+
+  it('still uses SITE_URL and this deployment in production', () => {
+    vi.stubEnv('VERCEL_ENV', 'production');
+    vi.stubEnv('VERCEL_URL', DEPLOYMENT);
+    expect(returnOrigin(SITE_URL)).toBe(SITE_URL);
+    expect(returnOrigin(`https://${DEPLOYMENT}`)).toBe(`https://${DEPLOYMENT}`);
+  });
+
+  it.each([
+    ['another site', 'https://evil.example'],
+    ['a site whose name begins with SITE_URL', 'https://siphaven.com.evil.example'],
+    ['a subdomain of the site', 'https://shop.siphaven.com'],
+    ['the site on another port', 'https://siphaven.com:8443'],
+    ['the site over http', 'http://siphaven.com'],
+    ['the site with a path', 'https://siphaven.com/cart'],
+    ['the site with a trailing slash', 'https://siphaven.com/'],
+    ['localhost with no port', 'http://localhost'],
+    ['localhost over https', 'https://localhost:5174'],
+    ['localhost with a path', 'http://localhost:5174/cart'],
+    ['a longer host that begins like localhost', 'http://localhost:5174.evil.example'],
+    ['a host that ends in localhost', 'http://evil-localhost:5174'],
+    ['a localhost port that is not a number', 'http://localhost:abc'],
+    ['127.0.0.1', 'http://127.0.0.1:5174'],
+    ['the text "null" that a browser sends from a sandboxed page', 'null'],
+    ['no Origin at all', undefined],
+    ['an empty Origin', ''],
+    ['an Origin that is not text', [SITE_URL]],
+  ])('uses SITE_URL itself, not the request Origin, for %s', (_description, requestOrigin) => {
+    expect(returnOrigin(requestOrigin)).toBe(SITE_URL);
+  });
+
+  it('does not take "https://undefined" for this deployment when VERCEL_URL is not set', () => {
+    // Without the check, `https://${undefined}` would be a trusted origin.
+    expect(returnOrigin('https://undefined')).toBe(SITE_URL);
+  });
+
+  it('does not trust this deployment over another scheme or port', () => {
+    vi.stubEnv('VERCEL_URL', DEPLOYMENT);
+    expect(returnOrigin(`http://${DEPLOYMENT}`)).toBe(SITE_URL);
+    expect(returnOrigin(`https://${DEPLOYMENT}:8443`)).toBe(SITE_URL);
+    expect(returnOrigin(`https://other-${DEPLOYMENT}`)).toBe(SITE_URL);
+  });
+
+  it('ignores a trailing slash on SITE_URL, which an Origin never has', () => {
+    vi.stubEnv('SITE_URL', 'https://siphaven.com/');
+    expect(returnOrigin('https://siphaven.com')).toBe('https://siphaven.com');
+    expect(returnOrigin('https://evil.example')).toBe('https://siphaven.com');
+  });
+
+  describe('when SITE_URL is not set', () => {
+    it.each([
+      ['unset', undefined],
+      ['blank', ''],
+      ['only spaces', '   '],
+    ])('throws, naming SITE_URL, for an Origin that is not allowed (SITE_URL %s)', (_case, value) => {
+      vi.stubEnv('SITE_URL', value);
+      expect(() => returnOrigin('https://evil.example')).toThrow(/SITE_URL/);
+      expect(() => returnOrigin(undefined)).toThrow(/SITE_URL/);
+      expect(() => returnOrigin('')).toThrow(/SITE_URL/);
+    });
+
+    it('does not use a localhost Origin in production either', () => {
+      vi.stubEnv('SITE_URL', undefined);
+      vi.stubEnv('VERCEL_ENV', 'production');
+      expect(() => returnOrigin('http://localhost:5174')).toThrow(/SITE_URL/);
+    });
+
+    it('still uses an Origin that is allowed without it: this deployment, or localhost', () => {
+      vi.stubEnv('SITE_URL', undefined);
+      vi.stubEnv('VERCEL_URL', DEPLOYMENT);
+      expect(returnOrigin(`https://${DEPLOYMENT}`)).toBe(`https://${DEPLOYMENT}`);
+      expect(returnOrigin('http://localhost:5174')).toBe('http://localhost:5174');
+    });
+  });
+});
+
 describe('POST /api/checkout', () => {
   it.each(['GET', 'PUT', 'DELETE'])('answers a %s request with 405', async (method) => {
     const res = await post({ items: [tin(1)] }, { method });
@@ -355,22 +466,6 @@ describe('POST /api/checkout', () => {
     expect(sessionParams().shipping_address_collection).toEqual({ allowed_countries: ['US'] });
   });
 
-  it('sends the shopper back to the site they came from', async () => {
-    await post({ items: [tin(1)] }, { headers: { origin: 'https://preview.siphaven.test' } });
-    expect(sessionParams().success_url).toBe(
-      'https://preview.siphaven.test/success?session_id={CHECKOUT_SESSION_ID}',
-    );
-    expect(sessionParams().cancel_url).toBe('https://preview.siphaven.test/cart');
-  });
-
-  it('falls back to the local dev server when the request has no Origin header', async () => {
-    await post({ items: [tin(1)] }, { headers: {} });
-    expect(sessionParams().success_url).toBe(
-      'http://localhost:5174/success?session_id={CHECKOUT_SESSION_ID}',
-    );
-    expect(sessionParams().cancel_url).toBe('http://localhost:5174/cart');
-  });
-
   it('charges flat shipping on a small cart', async () => {
     await post({ items: [tin(1)] });
     const rate = sessionParams().shipping_options[0].shipping_rate_data;
@@ -424,6 +519,98 @@ describe('POST /api/checkout', () => {
     expect(res.statusCode).toBe(500);
     expect(res.body).toEqual({ error: 'Payment session could not be created.' });
     expect(log).toHaveBeenCalledTimes(1);
+  });
+
+  describe('where Stripe sends the shopper back to', () => {
+    // The Origin header is whatever the caller says it is, so success_url and cancel_url
+    // are only built from it when it names a place this site is served from.
+    const urls = () => [sessionParams().success_url, sessionParams().cancel_url];
+    const SUCCESS = (base) => `${base}/success?session_id={CHECKOUT_SESSION_ID}`;
+    const CART = (base) => `${base}/cart`;
+
+    it('is the site the shopper came from, when that is SITE_URL', async () => {
+      await post({ items: [tin(1)] }, { headers: { origin: SITE_URL } });
+      expect(urls()).toEqual([SUCCESS(SITE_URL), CART(SITE_URL)]);
+    });
+
+    it('is this preview deployment when the shopper came from it', async () => {
+      const deployment = 'https://sip-haven-store-abc123.vercel.app';
+      vi.stubEnv('VERCEL_URL', 'sip-haven-store-abc123.vercel.app');
+      await post({ items: [tin(1)] }, { headers: { origin: deployment } });
+      expect(urls()).toEqual([SUCCESS(deployment), CART(deployment)]);
+    });
+
+    it('is a localhost address with a port when the shopper came from one outside production', async () => {
+      vi.stubEnv('VERCEL_ENV', 'development');
+      await post({ items: [tin(1)] }, { headers: { origin: 'http://localhost:5174' } });
+      expect(urls()).toEqual([SUCCESS('http://localhost:5174'), CART('http://localhost:5174')]);
+    });
+
+    it('is SITE_URL, not a localhost address, in production', async () => {
+      vi.stubEnv('VERCEL_ENV', 'production');
+      await post({ items: [tin(1)] }, { headers: { origin: 'http://localhost:5174' } });
+      expect(urls()).toEqual([SUCCESS(SITE_URL), CART(SITE_URL)]);
+    });
+
+    it.each([
+      ['another site', 'https://evil.example'],
+      ['a lookalike of the site', 'https://siphaven.com.evil.example'],
+      ['localhost with no port', 'http://localhost'],
+    ])('is SITE_URL, never the Origin, for %s', async (_description, origin) => {
+      const res = await post({ items: [tin(1)] }, { headers: { origin } });
+      expect(res.statusCode).toBe(200);
+      expect(urls()).toEqual([SUCCESS(SITE_URL), CART(SITE_URL)]);
+      expect(JSON.stringify(sessionParams())).not.toContain('evil');
+    });
+
+    it('is SITE_URL when the request has no Origin header', async () => {
+      const res = await post({ items: [tin(1)] }, { headers: {} });
+      expect(res.statusCode).toBe(200);
+      expect(urls()).toEqual([SUCCESS(SITE_URL), CART(SITE_URL)]);
+    });
+
+    it('is the localhost address, with no SITE_URL set, when the shopper came from one', async () => {
+      vi.stubEnv('SITE_URL', undefined);
+      const res = await post({ items: [tin(1)] }, { headers: { origin: 'http://localhost:5174' } });
+      expect(res.statusCode).toBe(200);
+      expect(urls()).toEqual([SUCCESS('http://localhost:5174'), CART('http://localhost:5174')]);
+    });
+
+    it.each([
+      ['an Origin that is not allowed', { origin: 'https://evil.example' }],
+      ['no Origin header', {}],
+    ])('answers 500 and logs the missing SITE_URL when it is unset and there is %s', async (_description, headers) => {
+      const log = silenceErrorLog();
+      vi.stubEnv('SITE_URL', undefined);
+
+      const res = await post({ items: [tin(1)] }, { headers });
+
+      expect(res.statusCode).toBe(500);
+      expect(res.body).toEqual({ error: 'Payment session could not be created.' });
+      expect(JSON.stringify(res.body)).not.toContain('SITE_URL');
+      expect(log).toHaveBeenCalledTimes(1);
+      expect(log.mock.calls[0][1].message).toMatch(/SITE_URL/);
+      expect(stripe.Stripe).not.toHaveBeenCalled();
+      expect(stripe.createSession).not.toHaveBeenCalled();
+    });
+
+    it('answers 500 for a localhost Origin in production when SITE_URL is unset', async () => {
+      silenceErrorLog();
+      vi.stubEnv('SITE_URL', undefined);
+      vi.stubEnv('VERCEL_ENV', 'production');
+
+      const res = await post({ items: [tin(1)] }, { headers: { origin: 'http://localhost:5174' } });
+
+      expect(res.statusCode).toBe(500);
+      expect(stripe.createSession).not.toHaveBeenCalled();
+    });
+
+    it('still turns a bad cart away with 400 first when SITE_URL is unset', async () => {
+      vi.stubEnv('SITE_URL', undefined);
+      const res = await post({ items: [tin(0)] }, { headers: {} });
+      expect(res.statusCode).toBe(400);
+      expect(res.body).toEqual({ error: 'Quantity must be between 1 and 20.' });
+    });
   });
 
   it('does not leak an unexpected error from the cart check', async () => {

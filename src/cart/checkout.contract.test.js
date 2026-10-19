@@ -94,6 +94,8 @@ beforeEach(() => {
   vi.stubEnv('STORE_OPEN', 'true');
   vi.stubEnv('VITE_STORE_OPEN', undefined);
   vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_fake');
+  // The handler only sends a shopper back to the site it is configured for.
+  vi.stubEnv('SITE_URL', 'https://siphaven.com');
   stripe.Stripe.mockReset();
   stripe.createSession.mockReset();
   stripe.createSession.mockResolvedValue({ url: SESSION_URL });
