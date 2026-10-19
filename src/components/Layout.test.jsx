@@ -8,8 +8,9 @@ function renderAt(path) {
   return render(<RouterProvider router={router} />);
 }
 
-// Every page the site is meant to have. A page that is not built yet still has to
-// resolve (to a stub heading), and a page that is built must keep its h1.
+// Every page the site is meant to have. Each must keep its h1 and must not be the
+// not-found page. /learn/:slug is not listed: the guides list ships empty, so every
+// guide address is the not-found page by design (see Learn.test.jsx for that route).
 const PAGES = [
   '/',
   '/tea',
@@ -17,7 +18,6 @@ const PAGES = [
   '/products/some-tea',
   '/quiz',
   '/learn',
-  '/learn/some-guide',
   '/our-story',
   '/contact',
   '/shipping-returns',

@@ -1,19 +1,18 @@
 import { CartProvider } from './cart/CartContext.jsx';
 import Layout from './components/Layout.jsx';
 import Cart from './pages/Cart.jsx';
+import Contact from './pages/Contact.jsx';
+import Guide from './pages/Guide.jsx';
 import Home from './pages/Home.jsx';
+import Learn from './pages/Learn.jsx';
 import NotFound from './pages/NotFound.jsx';
+import OurStory from './pages/OurStory.jsx';
+import Privacy from './pages/Privacy.jsx';
 import Product from './pages/Product.jsx';
 import Quiz from './pages/Quiz.jsx';
+import ShippingReturns from './pages/ShippingReturns.jsx';
 import Shop from './pages/Shop.jsx';
-
-// A page that is not built yet shows its name as a heading. Building a page means
-// swapping its stub() for the real component here.
-const stub = (name) => (
-  <h1 className="mx-auto max-w-6xl px-4 py-16 font-serif text-3xl font-semibold text-sage-deep">
-    {name}
-  </h1>
-);
+import Success from './pages/Success.jsx';
 
 // Every route sits inside Layout (shipping strip, header, footer), and Layout sits
 // inside the CartProvider, so the Header's Cart button, the product pages and the
@@ -33,13 +32,14 @@ export const routes = [
       { path: 'coffee', element: <Shop category="coffee" /> },
       { path: 'products/:slug', element: <Product /> },
       { path: 'quiz', element: <Quiz /> },
-      { path: 'learn', element: stub('Learn') },
-      { path: 'learn/:slug', element: stub('Guide') },
-      { path: 'our-story', element: stub('Our Story') },
-      { path: 'contact', element: stub('Contact') },
-      { path: 'shipping-returns', element: stub('Shipping & Returns') },
-      { path: 'privacy', element: stub('Privacy') },
-      { path: 'success', element: stub('Success') },
+      { path: 'learn', element: <Learn /> },
+      { path: 'learn/:slug', element: <Guide /> },
+      { path: 'our-story', element: <OurStory /> },
+      { path: 'contact', element: <Contact /> },
+      { path: 'shipping-returns', element: <ShippingReturns /> },
+      { path: 'privacy', element: <Privacy /> },
+      // Stripe sends a shopper here once the payment is done.
+      { path: 'success', element: <Success /> },
       // Stripe sends a shopper who backs out of Checkout here: the home page with the
       // cart drawer open over it.
       { path: 'cart', element: <Cart /> },

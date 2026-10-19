@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatLabel, formatPrice } from './format.js';
+import { formatDollars, formatLabel, formatPrice } from './format.js';
 
 describe('formatPrice', () => {
   it.each([
@@ -17,6 +17,22 @@ describe('formatPrice', () => {
 
   it('keeps the cents on a whole-dollar amount, so a total never changes shape', () => {
     expect(formatPrice(5000)).toBe('$50.00');
+  });
+});
+
+describe('formatDollars', () => {
+  it.each([
+    [5000, '$50'],
+    [7500, '$75'],
+    [695, '$6.95'],
+    [4950, '$49.50'],
+    [100, '$1'],
+    [1, '$0.01'],
+    [0, '$0'],
+    [123456, '$1,234.56'],
+    [100000, '$1,000'],
+  ])('writes %i cents as %s, in the way a sentence reads', (cents, text) => {
+    expect(formatDollars(cents)).toBe(text);
   });
 });
 
