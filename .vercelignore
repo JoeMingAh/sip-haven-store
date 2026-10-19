@@ -1,0 +1,7 @@
+# Test files stay out of a deployment. Vercel makes a function of every file in api/, so
+# api/checkout.test.js and the others would otherwise be deployed as endpoints.
+# Only test files are listed here: the app, its functions and its build need the rest
+# (scripts/vercelignore.test.js checks that).
+**/*.test.js
+**/*.test.jsx
+**/*.contract.test.js
