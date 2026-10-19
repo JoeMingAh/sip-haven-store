@@ -43,7 +43,7 @@ const mockSession = {
   line_items: {
     data: [
       {
-        description: "Sipper's Whisper Espresso Blend",
+        description: "Sipper's Dawn Espresso Blend",
         quantity: 2,
       },
     ],
@@ -76,7 +76,7 @@ describe('buildOrderEmail', () => {
 
   it('includes item name and quantity', () => {
     const { text } = buildOrderEmail(mockSession);
-    expect(text).toContain("Sipper's Whisper Espresso Blend x2");
+    expect(text).toContain("Sipper's Dawn Espresso Blend x2");
   });
 
   it('shows "No address provided" when shipping_details is null', () => {
@@ -109,14 +109,14 @@ describe('buildOrderEmail', () => {
       ...mockSession,
       line_items: {
         data: [
-          { description: "Sipper's Whisper Espresso Blend", quantity: 1 },
-          { description: "Sipper's Murmur – Swiss Water® Decaf", quantity: 2 },
+          { description: "Sipper's Dawn Espresso Blend", quantity: 1 },
+          { description: "Sipper's Evening – Swiss Water® Decaf", quantity: 2 },
         ],
       },
     };
     const { text } = buildOrderEmail(session);
-    expect(text).toContain("Sipper's Whisper Espresso Blend x1");
-    expect(text).toContain("Sipper's Murmur – Swiss Water® Decaf x2");
+    expect(text).toContain("Sipper's Dawn Espresso Blend x1");
+    expect(text).toContain("Sipper's Evening – Swiss Water® Decaf x2");
   });
 });
 

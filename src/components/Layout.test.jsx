@@ -54,9 +54,9 @@ describe('header', () => {
 });
 
 describe('shipping strip', () => {
-  it('says free shipping starts at $50', () => {
+  it('says free shipping starts at $50, the amount itself included', () => {
     renderAt('/');
-    expect(screen.getByText(/free shipping on orders over \$50/i)).toBeInTheDocument();
+    expect(screen.getByText(/free shipping on orders of \$50 or more/i)).toBeInTheDocument();
   });
 });
 

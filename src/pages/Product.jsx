@@ -92,8 +92,21 @@ function brewRows(product) {
   ].filter(([, value]) => value);
 }
 
-// One product, top to bottom: gallery, name, format and size, price, Add to cart, then
-// flavor notes, caffeine, brew guide, ingredients and a few more to look at.
+// A text field of the lineup, trimmed: '' when the product has none, or only spaces.
+const textOf = (value) => (typeof value === 'string' ? value.trim() : '');
+
+// The story as paragraphs. A spreadsheet cell holds line breaks, not blank-line
+// paragraphs, so every line with something on it is a paragraph.
+function storyParagraphs(product) {
+  return textOf(product.story)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+// One product, top to bottom: gallery, tea type, name, description, story and origin
+// (each only when the lineup has it), format and size, price, Add to cart, then flavor
+// notes, caffeine, brew guide, ingredients and a few more to look at.
 function ProductDetails({ product }) {
   const { add, open } = useCart();
   const variants = purchasableVariants(product);
@@ -106,6 +119,9 @@ function ProductDetails({ product }) {
     ? CAFFEINE_LABELS[product.caffeine]
     : product.caffeine;
   const brew = brewRows(product);
+  const teaType = textOf(product.tea_type);
+  const story = storyParagraphs(product);
+  const origin = textOf(product.origin);
   const related = relatedProducts(product, getProducts(product.category));
 
   function handleAdd() {
@@ -119,12 +135,26 @@ function ProductDetails({ product }) {
         <Gallery product={product} />
 
         <div>
+          {teaType && (
+            <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-sage-deep">
+              <span className="sr-only">Tea type: </span>
+              {teaType}
+            </p>
+          )}
           <h1 className="text-balance font-serif text-3xl font-semibold leading-tight text-sage-deep md:text-4xl">
             {product.name}
           </h1>
           {product.short_description && (
             <p className="mt-3 text-pretty text-lg leading-relaxed">{product.short_description}</p>
           )}
+          {story.length > 0 && (
+            <div className="mt-4 space-y-3 text-pretty leading-relaxed">
+              {story.map((paragraph, position) => (
+                <p key={`${position}-${paragraph}`}>{paragraph}</p>
+              ))}
+            </div>
+          )}
+          {origin && <p className="mt-4 text-sm">Origin: {origin}</p>}
 
           {variant ? (
             <div className="mt-6 space-y-6">

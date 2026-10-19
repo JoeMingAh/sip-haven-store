@@ -125,6 +125,16 @@ describe('Product: store closed', () => {
     renderAt('/products/no-such-tea');
     expect(screen.getByRole('main').textContent).toBe(real);
   });
+
+  it('shows no story, origin or tea type either', () => {
+    shop.open = false;
+    shop.products = [product({ story: 'A secret story.', origin: 'Secret Valley', tea_type: 'oolong' })];
+    renderAt('/products/jasmine-dream');
+    const page = screen.getByRole('main');
+    expect(page).not.toHaveTextContent('A secret story.');
+    expect(page).not.toHaveTextContent('Secret Valley');
+    expect(page).not.toHaveTextContent(/oolong/i);
+  });
 });
 
 describe('Product: store open but the lineup empty', () => {
@@ -281,6 +291,132 @@ describe('Product: the page', () => {
     renderAt('/products/bare');
     expect(heading('Bare Tea', 1)).toBeInTheDocument();
     expect(addButton()).toBeEnabled();
+  });
+});
+
+describe('Product: story, origin and tea type', () => {
+  const DESCRIPTION = 'A floral green tea scented with jasmine blossoms.';
+  const STORY = 'Grown on a hillside terrace.\nPlucked by hand in early spring.';
+
+  it('shows the story as paragraphs, one for each line, under the description', () => {
+    shop.products = [product({ story: STORY })];
+    renderAt('/products/jasmine-dream');
+    const first = main().getByText('Grown on a hillside terrace.');
+    const second = main().getByText('Plucked by hand in early spring.');
+    expect(first.tagName).toBe('P');
+    expect(second.tagName).toBe('P');
+    expect(first).not.toBe(second);
+    expect(isAbove(main().getByText(DESCRIPTION), first)).toBe(true);
+    expect(isAbove(first, second)).toBe(true);
+  });
+
+  it('treats blank lines and Windows line endings as paragraph breaks, and drops empty ones', () => {
+    shop.products = [product({ story: '\r\nFirst paragraph.\r\n\r\n  Second paragraph.  \r\n\r\n' })];
+    renderAt('/products/jasmine-dream');
+    const paragraphs = main()
+      .getAllByText(/paragraph\.$/)
+      .map((item) => item.textContent);
+    expect(paragraphs).toEqual(['First paragraph.', 'Second paragraph.']);
+  });
+
+  it('shows the origin as a small "Origin: ..." line under the story', () => {
+    shop.products = [product({ story: STORY, origin: 'Yunnan, China' })];
+    renderAt('/products/jasmine-dream');
+    const origin = main().getByText('Origin: Yunnan, China');
+    expect(origin.tagName).toBe('P');
+    expect(isAbove(main().getByText('Plucked by hand in early spring.'), origin)).toBe(true);
+  });
+
+  it('shows the origin under the description even when there is no story', () => {
+    shop.products = [product({ origin: 'Yunnan, China' })];
+    renderAt('/products/jasmine-dream');
+    expect(isAbove(main().getByText(DESCRIPTION), main().getByText('Origin: Yunnan, China'))).toBe(true);
+  });
+
+  it('puts the story and origin after the description and before the picker and Add to cart', () => {
+    shop.products = [product({ story: STORY, origin: 'Yunnan, China' })];
+    renderAt('/products/jasmine-dream');
+    const parts = [
+      heading('Jasmine Dream', 1),
+      main().getByText(DESCRIPTION),
+      main().getByText('Grown on a hillside terrace.'),
+      main().getByText('Origin: Yunnan, China'),
+      group('Format'),
+      addButton(),
+      heading('Flavor notes'),
+    ];
+    parts.slice(1).forEach((part, index) => {
+      expect(isAbove(parts[index], part), `part ${index + 1} sits above part ${index + 2}`).toBe(true);
+    });
+  });
+
+  it('shows the tea type as a small label above the name, in the same column', () => {
+    shop.products = [product({ tea_type: 'green' })];
+    renderAt('/products/jasmine-dream');
+    const name = heading('Jasmine Dream', 1);
+    const label = main().getByText('green');
+    expect(label).toHaveTextContent('Tea type: green');
+    expect(isAbove(label, name)).toBe(true);
+    expect(name.parentElement).toContainElement(label);
+    // A label, not a second heading.
+    expect(main().getAllByRole('heading', { level: 1 })).toHaveLength(1);
+  });
+
+  it('shows all three together and still sells the product', () => {
+    shop.products = [product({ story: STORY, origin: 'Yunnan, China', tea_type: 'green' })];
+    renderAt('/products/jasmine-dream');
+    expect(main().getByText('green')).toBeInTheDocument();
+    expect(main().getByText('Origin: Yunnan, China')).toBeInTheDocument();
+    expect(main().getByText('Grown on a hillside terrace.')).toBeInTheDocument();
+    expect(main().getByText('$18.00')).toBeInTheDocument();
+    expect(addButton()).toBeEnabled();
+  });
+
+  it('shows them for a product that cannot be bought yet, as well', () => {
+    shop.products = [
+      product({
+        story: STORY,
+        origin: 'Yunnan, China',
+        tea_type: 'green',
+        variants: [variant({ stripe_price_id: undefined })],
+      }),
+    ];
+    renderAt('/products/jasmine-dream');
+    expect(main().getByText('Origin: Yunnan, China')).toBeInTheDocument();
+    expect(main().getByText('Grown on a hillside terrace.')).toBeInTheDocument();
+    expect(main().getByText('green')).toBeInTheDocument();
+    expect(main().getByRole('button', { name: 'Not available yet' })).toBeDisabled();
+  });
+
+  it('shows the text as plain text, never as markup', () => {
+    shop.products = [product({ story: '<b>bold</b> claim', origin: '<i>Valley</i>' })];
+    renderAt('/products/jasmine-dream');
+    expect(main().getByText('<b>bold</b> claim')).toBeInTheDocument();
+    expect(main().getByText('Origin: <i>Valley</i>')).toBeInTheDocument();
+    expect(screen.getByRole('main').querySelector('b, i')).toBeNull();
+  });
+
+  it('leaves out what the lineup has nothing for', () => {
+    // JASMINE has no story, origin or tea_type.
+    renderAt('/products/jasmine-dream');
+    expect(main().queryByText(/^Origin:/)).not.toBeInTheDocument();
+    expect(main().queryByText(/tea type/i)).not.toBeInTheDocument();
+    // Straight from the description to the buying controls, with no empty block between.
+    const buying = heading('Jasmine Dream', 1).parentElement;
+    expect([...buying.children].map((child) => child.tagName)).toEqual(['H1', 'P', 'DIV']);
+  });
+
+  it.each([
+    ['empty', ''],
+    ['spaces', '   '],
+    ['line breaks', ' \n \r\n '],
+  ])('treats a story, origin and tea type that are %s as missing', (_, blank) => {
+    shop.products = [product({ story: blank, origin: blank, tea_type: blank })];
+    renderAt('/products/jasmine-dream');
+    expect(main().queryByText(/^Origin:/)).not.toBeInTheDocument();
+    expect(main().queryByText(/tea type/i)).not.toBeInTheDocument();
+    const buying = heading('Jasmine Dream', 1).parentElement;
+    expect([...buying.children].map((child) => child.tagName)).toEqual(['H1', 'P', 'DIV']);
   });
 });
 

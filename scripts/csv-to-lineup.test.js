@@ -1,7 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { validateLineup } from '../lib/catalog.js';
+import { QUIZ_QUESTIONS } from '../lib/quiz.js';
 import { csvToLineup, runCli } from './csv-to-lineup.js';
+
+// Every word the quiz's flavor question looks for in a product's tags, read from the
+// quiz itself so this list cannot drift from it.
+const QUIZ_FLAVOR_TAGS = QUIZ_QUESTIONS.find((question) => question.id === 'flavor').answers.flatMap(
+  (answer) => answer.tags,
+);
+// The main word for each flavor answer, as the notes in the template name them.
+const MAIN_FLAVOR_TAGS = ['floral', 'fruity', 'earthy', 'sweet', 'spiced'];
 
 // The columns of lineup-template.csv, in the order the template lists them.
 const COLUMNS = [
@@ -463,6 +472,51 @@ describe('lineup-template.csv', () => {
       expect(product.name).toMatch(/example/i);
       expect(product.short_description).toMatch(/example/i);
     }
+  });
+
+  it('tags the examples with words the quiz looks for, to show what the tags column is for', () => {
+    for (const product of csvToLineup(template, NO_EXISTING).products) {
+      expect(product.tags.length, `${product.slug} has tags`).toBeGreaterThan(0);
+      for (const tag of product.tags) {
+        expect(QUIZ_FLAVOR_TAGS, `${product.slug}: ${tag} is a quiz flavor tag`).toContain(tag);
+      }
+    }
+  });
+
+  it('lists the quiz flavor tags, and points to the guide, in the notes on an example row', () => {
+    // A CSV cannot hold comments, so the notes ride in an example row's story cell.
+    const notes = csvToLineup(template, NO_EXISTING).products.map((product) => product.story ?? '');
+    expect(notes.some((note) => MAIN_FLAVOR_TAGS.every((tag) => note.includes(tag)))).toBe(true);
+    expect(notes.some((note) => note.includes('LINEUP-GUIDE.md'))).toBe(true);
+  });
+});
+
+describe('LINEUP-GUIDE.md', () => {
+  const guide = readFileSync(new URL('../LINEUP-GUIDE.md', import.meta.url), 'utf8');
+
+  it.each(COLUMNS)('has a table row for the %s column', (column) => {
+    expect(guide).toContain(`| \`${column}\` |`);
+  });
+
+  it('lists the columns in the order the template has them', () => {
+    const places = COLUMNS.map((column) => guide.indexOf(`| \`${column}\` |`));
+    expect(places.every((place) => place >= 0)).toBe(true);
+    expect(places).toEqual([...places].sort((a, b) => a - b));
+  });
+
+  it.each(QUIZ_FLAVOR_TAGS)('names the quiz flavor tag "%s"', (tag) => {
+    expect(guide).toContain(`\`${tag}\``);
+  });
+
+  it('says which column the quiz reads and which the flavor filter reads', () => {
+    // tags drive the quiz; flavor_notes drive the Flavor boxes on /tea and /coffee.
+    expect(guide).toMatch(/quiz[^\n]*`tags`|`tags`[^\n]*quiz/i);
+    expect(guide).toMatch(/filter[^\n]*`flavor_notes`|`flavor_notes`[^\n]*filter/i);
+  });
+
+  it('uses plain ASCII only', () => {
+    // eslint-disable-next-line no-control-regex
+    expect(guide).toMatch(/^[\x09\x0A\x0D\x20-\x7E]*$/);
   });
 });
 
