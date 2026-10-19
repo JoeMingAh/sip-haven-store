@@ -239,8 +239,15 @@ function CartSummary({ lines, subtotalCents, busy, onBusyChange }) {
   }, [onBusyChange]);
 
   // The cart is closed, or the page is left, or the last line is gone: this goes, and
-  // the request with it.
-  useEffect(() => () => request.current?.abort(), []);
+  // the request with it. The lock on the lines goes too. It lives in the panel, which
+  // can outlast this summary, and one that came back later would find it still on.
+  useEffect(
+    () => () => {
+      request.current?.abort();
+      onBusyChange(false);
+    },
+    [onBusyChange],
+  );
 
   async function handleCheckout() {
     if (inFlight.current) return;

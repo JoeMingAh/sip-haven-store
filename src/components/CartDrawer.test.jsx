@@ -737,6 +737,33 @@ describe('CartDrawer: while the checkout request is out', () => {
     expect(inDialog().getByRole('link', { name: 'Dawn Roast' })).toBeInTheDocument();
   });
 
+  it('does not leave them locked when the summary goes while the request is out and comes back', () => {
+    answerByHand();
+    renderDrawer({ lines: [LOOSE] });
+    openDrawer();
+    fireEvent.click(checkoutButton());
+    expect(remove(JASMINE_LABEL)).toBeDisabled();
+    const { signal } = fetchMock.mock.calls[0][1];
+
+    // Another tab empties the cart: the Checkout button goes, and the request with it.
+    act(() => {
+      window.localStorage.setItem(KEY, '[]');
+      window.dispatchEvent(new StorageEvent('storage', { key: KEY }));
+    });
+    expect(inDialog().queryByRole('button', { name: 'Checkout' })).not.toBeInTheDocument();
+    expect(signal.aborted).toBe(true);
+
+    // Then it puts a line back. Nothing is out any more, so nothing should look busy.
+    act(() => {
+      window.localStorage.setItem(KEY, JSON.stringify([LOOSE]));
+      window.dispatchEvent(new StorageEvent('storage', { key: KEY }));
+    });
+    expect(checkoutButton()).toBeEnabled();
+    expect(checkoutButton()).not.toHaveAttribute('aria-busy', 'true');
+    expect(remove(JASMINE_LABEL)).toBeEnabled();
+    expect(more(JASMINE_LABEL)).toBeEnabled();
+  });
+
   it('turns them on again after a failure, keeping the limits of 1 and the most allowed', async () => {
     const atMost = line('dawn-roast', 'ground-12oz', MAX_QTY);
     const atLeast = line('jasmine-dream', 'loose-leaf-2oz', 1);
