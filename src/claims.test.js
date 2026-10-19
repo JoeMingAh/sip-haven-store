@@ -10,18 +10,25 @@ import { fileURLToPath } from 'node:url';
 // skipped (this one has to name them), and so is dist, which is built from these
 // files and is not there when the tests run.
 
+// The old coffees were called Sipper's Whisper and Sipper's Murmur (slugs
+// sippers-whisper and sippers-murmur). Only those names are banned: "whisper" and
+// "murmur" on their own are ordinary words that real tea copy uses, as in "a whisper
+// of jasmine".
+const OLD_NAME = "sipper's whisper/murmur";
+const OLD_SLUG = 'sippers-whisper/murmur';
+
 // What is banned, and how each is matched. Every pattern is case-insensitive (or
-// holds no letters) and global, so each hit is reported. The words are matched as
-// whole words and the numbers as whole numbers, so "whispered" or "112,400" is not a
-// hit; "unsplash" and "shopify" are not part of any other word, so they match anywhere.
+// holds no letters) and global, so each hit is reported. The numbers are matched as
+// whole numbers, so "112,400" is not a hit; "unsplash" and "shopify" are not part of
+// any other word, so they match anywhere.
 const BANNED = [
   { name: 'shopify', pattern: /shopify/gi },
   { name: '12,400', pattern: /(?<![\d,.])12,400(?!\d)/g },
   { name: '87+', pattern: /(?<![\d.,])87\+/g },
   { name: 'seven farms', pattern: /\bseven[\s-]+farms\b/gi },
   { name: 'unsplash', pattern: /unsplash/gi },
-  { name: 'whisper', pattern: /\bwhisper\b/gi },
-  { name: 'murmur', pattern: /\bmurmur\b/gi },
+  { name: OLD_NAME, pattern: /sipper['’]?s[\s-]+(whisper|murmur)/gi },
+  { name: OLD_SLUG, pattern: /sippers-(whisper|murmur)/gi },
   { name: '30-day', pattern: /(?<![\w-])30-day\b/gi },
 ];
 
@@ -71,8 +78,12 @@ describe('the matcher', () => {
     ['seven farms', 'Sourced from Seven\n      Farms'],
     ['seven farms', 'the seven-farms promise'],
     ['unsplash', 'https://images.unsplash.com/photo-1'],
-    ['whisper', "Sipper's Whisper Espresso Blend"],
-    ['murmur', 'Murmur: Swiss Water Decaf'],
+    [OLD_NAME, "Sipper's Whisper Espresso Blend"],
+    [OLD_NAME, 'Sipper’s Murmur: Swiss Water Decaf'],
+    [OLD_NAME, 'SIPPERS MURMUR'],
+    [OLD_NAME, "Sipper's\n      Whisper"],
+    [OLD_SLUG, 'sippers-whisper'],
+    [OLD_SLUG, '/products/sippers-murmur'],
     ['30-day', 'Easy 30-day returns'],
     ['30-day', 'A 30-Day guarantee'],
   ])('flags %s in %j', (name, text) => {
@@ -80,14 +91,18 @@ describe('the matcher', () => {
   });
 
   it.each([
-    ['whisper', 'whispers of jasmine, whispered softly, a whispering breeze'],
-    ['murmur', 'murmurs and a murmuring stream'],
+    [OLD_NAME, 'a whisper of jasmine'],
+    [OLD_NAME, 'A murmur of honey and a whisper of mint.'],
+    [OLD_NAME, 'Whisper-thin leaves, murmur-soft steam'],
+    [OLD_NAME, 'whispers of jasmine, whispered softly, a whispering breeze'],
+    [OLD_NAME, 'murmurs and a murmuring stream'],
+    [OLD_SLUG, 'a-whisper-of-jasmine, murmur-of-honey, not-sippers, sippers-choice'],
     ['12,400', 'a total of 112,400, or 12,4000, or 1,12,400'],
     ['87+', 'room 187+, or 0.87+, or 1,87+'],
     ['seven farms', 'seven farmers, seven farmhouses, seven farm stands'],
     ['30-day', 'a 130-day trek, or the x30-day plan'],
     ['shopify', 'Shop for tea, shop-it, shoppy'],
-  ])('does not flag %s inside other words or numbers: %j', (name, text) => {
+  ])('does not flag %s in ordinary words, or inside other words or numbers: %j', (name, text) => {
     expect(claimsIn(text).map((claim) => claim.name)).not.toContain(name);
   });
 
@@ -96,6 +111,7 @@ describe('the matcher', () => {
       'Free shipping on orders of $50 or more',
       'Tea and coffee for slow mornings and long talks.',
       'A floral green tea scented with jasmine blossoms.',
+      'Just a whisper of jasmine, and a murmur of honey on the finish.',
       'Contact us if anything arrives damaged and we will make it right.',
     ].join('\n');
     expect(claimsIn(copy)).toEqual([]);
