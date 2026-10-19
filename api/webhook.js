@@ -41,9 +41,14 @@ export function buildOrderEmail(session) {
   // older API version still prints its address (Ruling R15).
   const shipping = session.collected_information?.shipping_details ?? session.shipping_details;
   const address = shipping?.address;
+  // Who the parcel is for, which is not always the customer (a gift, say). Read from the
+  // same two places as the address, the current one first.
+  const shipToName =
+    session.collected_information?.shipping_details?.name || session.shipping_details?.name;
 
   const addressText = address
     ? [
+        shipToName,
         address.line1,
         address.line2,
         `${address.city}, ${address.state} ${address.postal_code}`,

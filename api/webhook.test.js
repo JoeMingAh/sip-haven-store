@@ -214,6 +214,77 @@ describe('buildOrderEmail shipping address source', () => {
   });
 });
 
+// A gift goes to someone other than the customer, so the order email says who it is
+// for, on a line of its own above the address.
+describe('buildOrderEmail ship-to name', () => {
+  const address = {
+    line1: '789 Pine St',
+    line2: 'Unit 2',
+    city: 'Austin',
+    state: 'TX',
+    postal_code: '78701',
+  };
+  // The customer is Jane Doe (mockSession); the parcel is for Sam Rivera. `current` has
+  // the shipping details where Stripe's current API puts them, `legacy` where it used to.
+  const current = (details) => ({
+    ...mockSession,
+    shipping_details: undefined,
+    collected_information: { shipping_details: details },
+  });
+  const legacy = (details) => ({ ...mockSession, shipping_details: details });
+
+  it('puts the ship-to name on its own line above the address', () => {
+    const { text } = buildOrderEmail(current({ name: 'Sam Rivera', address }));
+    expect(text).toContain(
+      ['Shipping Address:', 'Sam Rivera', '789 Pine St', 'Unit 2', 'Austin, TX 78701'].join('\n'),
+    );
+  });
+
+  it('reads it from the legacy shipping_details when collected_information has none', () => {
+    const { text } = buildOrderEmail(legacy({ name: 'Sam Rivera', address }));
+    expect(text).toContain(['Shipping Address:', 'Sam Rivera', '789 Pine St'].join('\n'));
+  });
+
+  it('prefers the name in collected_information.shipping_details to the legacy one', () => {
+    const { text } = buildOrderEmail({
+      ...mockSession,
+      collected_information: { shipping_details: { name: 'Sam Rivera', address } },
+      shipping_details: { name: 'Old Name', address },
+    });
+    expect(text).toContain('Sam Rivera');
+    expect(text).not.toContain('Old Name');
+  });
+
+  it('still shows the customer\'s own name and email, which can differ from the ship-to name', () => {
+    const { text } = buildOrderEmail(current({ name: 'Sam Rivera', address }));
+    expect(text).toContain('Customer: Jane Doe');
+    expect(text).toContain('Email: jane@example.com');
+    expect(text).toContain('Sam Rivera');
+  });
+
+  it.each([
+    ['null', null],
+    ['missing', undefined],
+    ['empty', ''],
+  ])('leaves the line out, with no gap, when the name is %s', (_case, name) => {
+    const { text } = buildOrderEmail(current({ name, address }));
+    expect(text).toContain(['Shipping Address:', '789 Pine St', 'Unit 2', 'Austin, TX 78701'].join('\n'));
+    expect(text).not.toContain('null');
+    expect(text).not.toContain('undefined');
+  });
+
+  it('shows no name, only that there is no address, when there is no address', () => {
+    const { text } = buildOrderEmail(current({ name: 'Sam Rivera' }));
+    expect(text).toContain('Shipping Address:\nNo address provided');
+    expect(text).not.toContain('Sam Rivera');
+  });
+
+  it('keeps the address lines in the same order as before, with the name added above', () => {
+    const { text } = buildOrderEmail(current({ name: 'Sam Rivera', address: { ...address, line2: null } }));
+    expect(text).toContain(['Shipping Address:', 'Sam Rivera', '789 Pine St', 'Austin, TX 78701'].join('\n'));
+  });
+});
+
 const EVENT_ID = 'evt_test_123';
 const SESSION_ID = 'cs_test_123';
 
@@ -318,6 +389,22 @@ describe('webhook handler', () => {
     expect(payload.text).toContain('House Roast (whole-bean-12oz) × 1');
     expect(payload.text).toContain('Tax: $2.06');
     expect(payload.text).toContain('Total: $27.06');
+  });
+
+  it('puts who the order ships to above the address in the email it sends', async () => {
+    stripe.retrieveSession.mockResolvedValue({
+      ...retrievedSession,
+      shipping_details: undefined,
+      collected_information: {
+        shipping_details: { name: 'Sam Rivera', address: mockSession.shipping_details.address },
+      },
+    });
+
+    await deliver();
+
+    const [payload] = sentEmail();
+    expect(payload.text).toContain('Customer: Jane Doe');
+    expect(payload.text).toContain('Shipping Address:\nSam Rivera\n123 Main St\nApt 4\nPortland, OR 97201');
   });
 
   it('sends the order email to ORDER_NOTIFY_EMAIL when it is set', async () => {
