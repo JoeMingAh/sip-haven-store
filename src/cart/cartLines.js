@@ -4,7 +4,7 @@
 // how many. The price and the names are always looked up in the lineup, never kept
 // in the cart, so a cart can never carry a stale or tampered price into checkout.
 // There is one line per slug and variant.
-import { findVariant } from '../../lib/catalog.js';
+import { findVariant, purchasableVariants } from '../../lib/catalog.js';
 import { MAX_QTY } from '../../lib/store-config.js';
 
 const clampQty = (qty) => Math.min(MAX_QTY, Math.max(1, qty));
@@ -14,11 +14,13 @@ const isWholeCount = (value) => Number.isInteger(value) && value >= 1;
 const isMatch = (slug, variantId) => (line) => line.slug === slug && line.variantId === variantId;
 
 /**
- * Whether this variant can be bought: it is in the lineup and has a stripe_price_id.
- * findVariant does not check the price id, so it is checked here.
+ * Whether this variant can be bought: it is in the lineup and has a stripe_price_id
+ * (a blank one is none). findVariant does not check the price id, so it is checked
+ * here, the way the shop and /api/checkout check it: with purchasableVariants.
  */
 export function isPurchasable(slug, variantId) {
-  return Boolean(findVariant(slug, variantId)?.variant.stripe_price_id);
+  const found = findVariant(slug, variantId);
+  return found !== undefined && purchasableVariants(found.product).includes(found.variant);
 }
 
 /**

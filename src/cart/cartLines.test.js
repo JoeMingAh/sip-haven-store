@@ -42,6 +42,23 @@ describe('isPurchasable', () => {
   ])('is false for %s', (_name, slug, variantId) => {
     expect(isPurchasable(slug, variantId)).toBe(false);
   });
+
+  it.each(['', ' ', '   ', '\t\n'])(
+    'is false for a variant whose stripe_price_id is blank (%j), as it is for the server',
+    (blank) => {
+      lineup.products = [
+        {
+          ...JASMINE,
+          variants: JASMINE.variants.map((variant) =>
+            variant.id === 'loose-leaf-2oz' ? { ...variant, stripe_price_id: blank } : variant,
+          ),
+        },
+      ];
+      expect(isPurchasable('jasmine-dream', 'loose-leaf-2oz')).toBe(false);
+      // Another variant of the same product is not caught by it.
+      expect(isPurchasable('jasmine-dream', 'tea-bags-15')).toBe(true);
+    },
+  );
 });
 
 describe('addLine', () => {
@@ -201,6 +218,18 @@ describe('restoreLines', () => {
 
   it('drops a variant that is in the lineup but not synced to Stripe, and says so', () => {
     expect(restoreLines([line('jasmine-dream', 'k-cup-12')])).toEqual({ lines: [], droppedStale: true });
+  });
+
+  it('drops a variant whose stripe_price_id is only spaces, as it does one with none', () => {
+    lineup.products = [
+      {
+        ...JASMINE,
+        variants: JASMINE.variants.map((variant) =>
+          variant.id === 'loose-leaf-2oz' ? { ...variant, stripe_price_id: '   ' } : variant,
+        ),
+      },
+    ];
+    expect(restoreLines([LOOSE, BAGS])).toEqual({ lines: [BAGS], droppedStale: true });
   });
 
   it.each([

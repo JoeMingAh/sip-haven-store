@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import { findVariant } from '../lib/catalog.js';
+import { findVariant, purchasableVariants } from '../lib/catalog.js';
 import {
   isStoreOpen,
   FREE_SHIPPING_CENTS,
@@ -30,9 +30,10 @@ export function buildLineItems(items) {
     const { slug, variantId, qty } = item ?? {};
 
     // findVariant does not check purchasability. A variant can only be sold once
-    // load-lineup has given it a Stripe price.
+    // load-lineup has given it a Stripe price, and the shop decides that the same way
+    // here as it does when it offers the variant (a blank price id is no price id).
     const found = findVariant(slug, variantId);
-    if (!found?.variant.stripe_price_id) {
+    if (!found || !purchasableVariants(found.product).includes(found.variant)) {
       throw new CheckoutError('That item is no longer available.');
     }
 

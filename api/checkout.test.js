@@ -47,6 +47,14 @@ vi.mock('../src/data/lineup.json', () => ({
             price_cents: 1500,
             stripe_price_id: '',
           },
+          // So does one with nothing in it but spaces.
+          {
+            id: 'tea-bags-60ct',
+            format: 'tea-bags',
+            size_label: '60 bags',
+            price_cents: 2000,
+            stripe_price_id: '   ',
+          },
         ],
       },
       {
@@ -193,6 +201,10 @@ describe('buildLineItems', () => {
     [
       'a variant whose stripe_price_id is blank',
       { slug: 'jasmine-dream', variantId: 'tea-bags-40ct', qty: 1 },
+    ],
+    [
+      'a variant whose stripe_price_id is only spaces',
+      { slug: 'jasmine-dream', variantId: 'tea-bags-60ct', qty: 1 },
     ],
     ['a line with no slug or variant', { qty: 1 }],
     ['a slug that is not text', { slug: ['jasmine-dream'], variantId: 'loose-leaf-2oz', qty: 1 }],
@@ -424,6 +436,10 @@ describe('POST /api/checkout', () => {
     [
       'a variant that is not synced to Stripe',
       { slug: 'jasmine-dream', variantId: 'tea-bags-20ct', qty: 1 },
+    ],
+    [
+      'a variant whose stripe_price_id is only spaces',
+      { slug: 'jasmine-dream', variantId: 'tea-bags-60ct', qty: 1 },
     ],
   ])('rejects %s with 400 and never reaches Stripe', async (_description, line) => {
     const res = await post({ items: [tin(1), line] });
