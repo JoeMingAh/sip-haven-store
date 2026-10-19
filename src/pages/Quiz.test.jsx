@@ -52,13 +52,17 @@ const item = (overrides = {}) => ({
   ...overrides,
 });
 
-// In lineup order. What each scores for tea + caffeine-free + floral + a slow ritual:
+// In lineup order. What each scores for tea + caffeine-free + floral + a slow ritual.
+// Caffeine-free is a filter too: a product with any caffeine is left out, however well
+// it fits the rest.
 //   Chamomile Meadow  none  herbal, floral   loose leaf + tea bags   4 + 2 + 1 = 7   from $12.00
 //   Mint Calm         none  herbal, minty    tea bags                4            from $11.00
-//   Jasmine Pearls    low   green, floral    loose leaf              2 + 1 = 3    from $18.00
-//   Breakfast Black   high  black, malty     tea bags + K-Cup        0 (left out)
+//   Jasmine Pearls    low   green, floral    loose leaf              left out (it has caffeine)
+//   Breakfast Black   high  black, malty     tea bags + K-Cup        left out (it has caffeine)
 //   Dawn Roast        high  earthy, nutty    whole bean + ground     a coffee
 //   Evening Decaf     none  sweet, caramel   ground                  a coffee
+// For tea + low caffeine + floral + a slow ritual, Jasmine Pearls scores 4 + 2 + 1 = 7
+// (from $18.00) and Chamomile Meadow 2 + 1 = 3.
 const LINEUP = [
   item({
     slug: 'chamomile-meadow',
@@ -428,7 +432,7 @@ describe('Quiz: the result, store open', () => {
     renderQuiz();
     choose(...TEA_NONE_FLORAL_RITUAL);
     expect(stepHeading()).toHaveTextContent(PICKS);
-    expect(names()).toEqual(['Chamomile Meadow', 'Mint Calm', 'Jasmine Pearls']);
+    expect(names()).toEqual(['Chamomile Meadow', 'Mint Calm']);
   });
 
   it('shows each pick\'s from price and links it to its product page', () => {
@@ -436,7 +440,6 @@ describe('Quiz: the result, store open', () => {
     choose(...TEA_NONE_FLORAL_RITUAL);
     expect(main().getByText('from $12.00')).toBeInTheDocument();
     expect(main().getByText('from $11.00')).toBeInTheDocument();
-    expect(main().getByText('from $18.00')).toBeInTheDocument();
     expect(main().getByRole('link', { name: 'Chamomile Meadow' })).toHaveAttribute(
       'href',
       '/products/chamomile-meadow',
@@ -452,7 +455,6 @@ describe('Quiz: the result, store open', () => {
       ['H2', PICKS],
       ['H3', 'Chamomile Meadow'],
       ['H3', 'Mint Calm'],
-      ['H3', 'Jasmine Pearls'],
     ]);
   });
 
@@ -498,7 +500,34 @@ describe('Quiz: the result, store open', () => {
     renderQuiz();
     choose(...TEA_NONE_FLORAL_RITUAL);
     expect(main().queryByText('Perfect But Unsynced')).not.toBeInTheDocument();
-    expect(names()).toEqual(['Chamomile Meadow', 'Mint Calm', 'Jasmine Pearls']);
+    expect(names()).toEqual(['Chamomile Meadow', 'Mint Calm']);
+  });
+
+  it('never shows a product with caffeine to someone who chose caffeine-free, however well it fits', () => {
+    // Jasmine Pearls is floral and comes in loose leaf, which is everything else they
+    // asked for, but it has some caffeine.
+    renderQuiz();
+    choose(...TEA_NONE_FLORAL_RITUAL);
+    expect(main().queryByText('Jasmine Pearls')).not.toBeInTheDocument();
+    expect(main().queryByText('Breakfast Black')).not.toBeInTheDocument();
+  });
+
+  it('shows that same product to someone who chose Low caffeine', () => {
+    renderQuiz();
+    choose('Tea', 'Low', 'Floral', 'A slow ritual');
+    expect(names()).toEqual(['Jasmine Pearls', 'Chamomile Meadow']);
+  });
+
+  it('stops showing it when the shopper goes back and changes Low to Caffeine-free', () => {
+    renderQuiz();
+    choose('Tea', 'Low', 'Floral', 'A slow ritual');
+    expect(names()).toContain('Jasmine Pearls');
+
+    press(backButton()); // question 4
+    press(backButton()); // question 3
+    press(backButton()); // question 2
+    choose('Caffeine-free', 'Floral', 'A slow ritual');
+    expect(names()).toEqual(['Chamomile Meadow', 'Mint Calm']);
   });
 
   it('does not offer to add anything to the cart from here', () => {
@@ -527,7 +556,7 @@ describe('Quiz: the result, store open', () => {
   it('recalculates after an answer is changed, keeping the other answers', () => {
     renderQuiz();
     choose(...TEA_NONE_FLORAL_RITUAL);
-    expect(names()).toEqual(['Chamomile Meadow', 'Mint Calm', 'Jasmine Pearls']);
+    expect(names()).toEqual(['Chamomile Meadow', 'Mint Calm']);
 
     press(backButton()); // question 4
     press(backButton()); // question 3
@@ -583,6 +612,15 @@ describe('Quiz: when nothing fits, store open', () => {
     choose(...TEA_NONE_FLORAL_RITUAL);
     expect(stepHeading()).toHaveTextContent(BLENDING);
     expect(main().getByLabelText('Email address')).toBeInTheDocument();
+  });
+
+  it('does the same when the only matches have caffeine and the shopper chose caffeine-free', () => {
+    shop.products = [LINEUP[2]]; // Jasmine Pearls: floral and loose leaf, but with some caffeine
+    renderQuiz();
+    choose(...TEA_NONE_FLORAL_RITUAL);
+    expect(stepHeading()).toHaveTextContent(BLENDING);
+    expect(main().queryByText('Jasmine Pearls')).not.toBeInTheDocument();
+    expect(names()).toEqual([]);
   });
 
   it('does the same when everything that fits cannot be bought yet', () => {

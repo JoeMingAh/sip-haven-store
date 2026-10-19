@@ -52,7 +52,7 @@ The quiz asks "Which flavors sound best?" and finds products by the words in the
 
 For example, a tea with `floral|sweet` in its `tags` suits both the Floral answer and the Sweet and spiced answer. Other words in `tags`, like `everyday` or `gift`, are fine too. The quiz ignores them, and "You might also like" uses them.
 
-The quiz also reads three other columns: `category` (tea or coffee), `caffeine` (it has to match the answer exactly, and it counts for the most) and `format` ("Quick and easy" looks for `k-cup`, `tea-bags` and `ground`, and "A slow ritual" looks for `loose-leaf` and `whole-bean`). It only picks products that can be bought, which means their prices have been sent to Stripe. A product with no matching tag can still come up because of its caffeine or format, but never because of its flavor.
+The quiz also reads three other columns: `category` (tea or coffee), `caffeine` (it has to match the answer exactly, and it counts for the most, except that "Caffeine-free" is a rule, not just points: it only ever picks products whose `caffeine` is `none`, however well they fit the other answers) and `format` ("Quick and easy" looks for `k-cup`, `tea-bags` and `ground`, and "A slow ritual" looks for `loose-leaf` and `whole-bean`). It only picks products that can be bought, which means their prices have been sent to Stripe. A product with no matching tag can still come up because of its caffeine or format, but never because of its flavor.
 
 ## After you fill it in
 
