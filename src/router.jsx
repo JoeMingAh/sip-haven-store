@@ -4,6 +4,7 @@ import Cart from './pages/Cart.jsx';
 import Home from './pages/Home.jsx';
 import NotFound from './pages/NotFound.jsx';
 import Product from './pages/Product.jsx';
+import Quiz from './pages/Quiz.jsx';
 import Shop from './pages/Shop.jsx';
 
 // A page that is not built yet shows its name as a heading. Building a page means
@@ -31,7 +32,7 @@ export const routes = [
       { path: 'tea', element: <Shop category="tea" /> },
       { path: 'coffee', element: <Shop category="coffee" /> },
       { path: 'products/:slug', element: <Product /> },
-      { path: 'quiz', element: stub('Quiz') },
+      { path: 'quiz', element: <Quiz /> },
       { path: 'learn', element: stub('Learn') },
       { path: 'learn/:slug', element: stub('Guide') },
       { path: 'our-story', element: stub('Our Story') },
