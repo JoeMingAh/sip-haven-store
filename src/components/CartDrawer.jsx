@@ -115,8 +115,10 @@ function EmptyCart() {
 }
 
 // One line of the cart. Names, sizes and prices come from the lineup; the cart only
-// remembers which variant and how many.
-function CartLine({ line }) {
+// remembers which variant and how many. While `busy` (a checkout request is out) the
+// steppers and Remove are off: the request holds the cart as it was when Checkout was
+// pressed, so changing the cart now would leave the shopper paying for another one.
+function CartLine({ line, busy }) {
   const { setQty, remove } = useCart();
   const found = findVariant(line.slug, line.variantId);
   if (!found) return null;
@@ -167,7 +169,7 @@ function CartLine({ line }) {
             <button
               type="button"
               aria-label={`Decrease quantity of ${label}`}
-              disabled={line.qty <= 1}
+              disabled={busy || line.qty <= 1}
               onClick={() => setQty(line.slug, line.variantId, line.qty - 1)}
               className={ICON_BUTTON}
             >
@@ -179,7 +181,7 @@ function CartLine({ line }) {
             <button
               type="button"
               aria-label={`Increase quantity of ${label}`}
-              disabled={line.qty >= MAX_QTY}
+              disabled={busy || line.qty >= MAX_QTY}
               onClick={() => setQty(line.slug, line.variantId, line.qty + 1)}
               className={ICON_BUTTON}
             >
@@ -190,8 +192,9 @@ function CartLine({ line }) {
           <button
             type="button"
             aria-label={`Remove ${label} from cart`}
+            disabled={busy}
             onClick={handleRemove}
-            className="inline-flex min-h-11 items-center text-sm font-semibold text-sage-deep underline underline-offset-4 hover:no-underline"
+            className="inline-flex min-h-11 items-center text-sm font-semibold text-sage-deep underline underline-offset-4 hover:no-underline disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:underline"
           >
             Remove
           </button>
@@ -207,12 +210,18 @@ const NO_FAILURE = { message: '', lines: null };
 
 // The subtotal, the shipping bar and the Checkout button, which asks the server for a
 // Stripe Checkout page and sends the shopper there. The button is off while a request
-// is out, and stays off once Stripe has the shopper: the browser is on its way.
-function CartSummary({ lines, subtotalCents }) {
-  const [busy, setBusy] = useState(false);
+// is out, and stays off once Stripe has the shopper: the browser is on its way. `busy`
+// is kept by the panel, so the lines can be turned off with the button.
+//
+// A request is given up on after a time limit (see startCheckout), and also when the
+// cart is closed or the page is left: the answer then goes nowhere, so it cannot send
+// the shopper to Stripe from a cart they have closed.
+function CartSummary({ lines, subtotalCents, busy, onBusyChange }) {
   const [failure, setFailure] = useState(NO_FAILURE);
   // A second click can arrive before the page has re-rendered with the button off.
   const inFlight = useRef(false);
+  // The request that is out, so that closing the cart can stop it.
+  const request = useRef(null);
 
   const error = failure.lines === lines ? failure.message : '';
 
@@ -222,27 +231,37 @@ function CartSummary({ lines, subtotalCents }) {
     function handlePageShow(event) {
       if (event.persisted) {
         inFlight.current = false;
-        setBusy(false);
+        onBusyChange(false);
       }
     }
     window.addEventListener('pageshow', handlePageShow);
     return () => window.removeEventListener('pageshow', handlePageShow);
-  }, []);
+  }, [onBusyChange]);
+
+  // The cart is closed, or the page is left, or the last line is gone: this goes, and
+  // the request with it.
+  useEffect(() => () => request.current?.abort(), []);
 
   async function handleCheckout() {
     if (inFlight.current) return;
     inFlight.current = true;
-    setBusy(true);
+    onBusyChange(true);
     setFailure(NO_FAILURE);
 
-    const result = await startCheckout(lines);
+    const controller = new AbortController();
+    request.current = controller;
+    const result = await startCheckout(lines, { signal: controller.signal });
+    // Closed while the request was out. Nobody is looking at this cart now, so nothing
+    // is shown and nobody is sent anywhere, whatever the answer was.
+    if (controller.signal.aborted) return;
+
     if (result.url) {
       window.location.assign(result.url);
       return;
     }
 
     inFlight.current = false;
-    setBusy(false);
+    onBusyChange(false);
     setFailure({ message: result.error, lines });
   }
 
@@ -284,6 +303,9 @@ function CartSummary({ lines, subtotalCents }) {
 // to check out; the saved cart is left alone for when the store opens.
 function CartPanel() {
   const { lines, subtotalCents, notice, close } = useCart();
+  // A checkout request is out, or Stripe has the shopper. Kept here because both the
+  // Checkout button and the lines depend on it.
+  const [busy, setBusy] = useState(false);
   const titleId = useId();
   const panelRef = useRef(null);
   useModal(panelRef, close);
@@ -329,7 +351,7 @@ function CartPanel() {
           {hasLines ? (
             <ul aria-label="Items in your cart">
               {lines.map((line) => (
-                <CartLine key={`${line.slug}/${line.variantId}`} line={line} />
+                <CartLine key={`${line.slug}/${line.variantId}`} line={line} busy={busy} />
               ))}
             </ul>
           ) : (
@@ -337,7 +359,14 @@ function CartPanel() {
           )}
         </div>
 
-        {hasLines && <CartSummary lines={lines} subtotalCents={subtotalCents} />}
+        {hasLines && (
+          <CartSummary
+            lines={lines}
+            subtotalCents={subtotalCents}
+            busy={busy}
+            onBusyChange={setBusy}
+          />
+        )}
       </div>
     </div>
   );

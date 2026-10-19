@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { startCheckout } from './checkout.js';
+import { startCheckout, CHECKOUT_TIMEOUT_MS } from './checkout.js';
 
 const GENERIC_ERROR = 'Something went wrong. Please try again.';
 const STRIPE_URL = 'https://checkout.stripe.com/c/pay/cs_test_abc123';
@@ -90,6 +90,128 @@ describe('startCheckout: the server says no', () => {
   ])('falls back to the generic message for %s', async (_name, response) => {
     fetchMock.mockResolvedValue(response);
     await expect(startCheckout(LINES)).resolves.toEqual({ error: GENERIC_ERROR });
+  });
+});
+
+// A fetch that never answers on its own, and fails the way a real one does when the
+// signal it was given is aborted, or was already.
+function hangUntilAborted() {
+  fetchMock.mockImplementation(
+    (_url, { signal }) =>
+      new Promise((_resolve, reject) => {
+        const fail = () => reject(new DOMException('The operation was aborted.', 'AbortError'));
+        if (signal.aborted) fail();
+        else signal.addEventListener('abort', fail);
+      }),
+  );
+}
+
+// The signal startCheckout gave its one fetch.
+const requestSignal = () => fetchMock.mock.calls[0][1].signal;
+
+describe('startCheckout: giving up', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('allows the request 20 seconds', () => {
+    expect(CHECKOUT_TIMEOUT_MS).toBe(20_000);
+  });
+
+  it('sends an abort signal with the request, which has not been aborted', async () => {
+    fetchMock.mockResolvedValue(reply(200, { url: STRIPE_URL }));
+    await startCheckout(LINES);
+    expect(requestSignal()).toBeInstanceOf(AbortSignal);
+    expect(requestSignal().aborted).toBe(false);
+  });
+
+  it('gives up when 20 seconds are up, and not before, with the generic message', async () => {
+    vi.useFakeTimers();
+    hangUntilAborted();
+    const result = startCheckout(LINES);
+
+    await vi.advanceTimersByTimeAsync(CHECKOUT_TIMEOUT_MS - 1);
+    expect(requestSignal().aborted).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(requestSignal().aborted).toBe(true);
+    await expect(result).resolves.toEqual({ error: GENERIC_ERROR });
+  });
+
+  it('counts the time spent reading the answer too, not only waiting for it to start', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockImplementation(async (_url, { signal }) => ({
+      ok: true,
+      status: 200,
+      // The headers are in, but the body trickles and never ends.
+      json: () =>
+        new Promise((_resolve, reject) => {
+          signal.addEventListener('abort', () =>
+            reject(new DOMException('The operation was aborted.', 'AbortError')),
+          );
+        }),
+    }));
+    const result = startCheckout(LINES);
+
+    await vi.advanceTimersByTimeAsync(CHECKOUT_TIMEOUT_MS - 1);
+    expect(requestSignal().aborted).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(requestSignal().aborted).toBe(true);
+    await expect(result).resolves.toEqual({ error: GENERIC_ERROR });
+  });
+
+  it.each([
+    ['a good answer', reply(200, { url: STRIPE_URL })],
+    ['an error from the server', reply(400, { error: 'That item is no longer available.' })],
+  ])('stops the clock once it has %s', async (_case, response) => {
+    vi.useFakeTimers();
+    fetchMock.mockResolvedValue(response);
+    await startCheckout(LINES);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('stops the clock when the request fails too', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
+    await startCheckout(LINES);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('gives up when the caller aborts, with the generic message', async () => {
+    hangUntilAborted();
+    const caller = new AbortController();
+    const result = startCheckout(LINES, { signal: caller.signal });
+    expect(requestSignal().aborted).toBe(false);
+
+    caller.abort();
+
+    expect(requestSignal().aborted).toBe(true);
+    await expect(result).resolves.toEqual({ error: GENERIC_ERROR });
+  });
+
+  it('hands fetch a signal that is already aborted when the caller has aborted before it starts', async () => {
+    hangUntilAborted();
+    const caller = new AbortController();
+    caller.abort();
+    const result = startCheckout(LINES, { signal: caller.signal });
+    expect(requestSignal().aborted).toBe(true);
+    await expect(result).resolves.toEqual({ error: GENERIC_ERROR });
+  });
+
+  it('stops following the caller once it is done, so a later abort changes nothing', async () => {
+    fetchMock.mockResolvedValue(reply(200, { url: STRIPE_URL }));
+    const caller = new AbortController();
+    await startCheckout(LINES, { signal: caller.signal });
+
+    caller.abort();
+
+    expect(requestSignal().aborted).toBe(false);
+  });
+
+  it('still works with no options at all', async () => {
+    fetchMock.mockResolvedValue(reply(200, { url: STRIPE_URL }));
+    await expect(startCheckout(LINES)).resolves.toEqual({ url: STRIPE_URL });
   });
 });
 

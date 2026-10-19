@@ -3,6 +3,7 @@ import { render, screen, fireEvent, within, act } from '@testing-library/react';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
 import { MAX_QTY } from '../../lib/store-config.js';
 import { CartProvider, useCart, STALE_NOTICE } from '../cart/CartContext.jsx';
+import { CHECKOUT_TIMEOUT_MS } from '../cart/checkout.js';
 import { placeholderFor } from '../assets/placeholders/index.js';
 import { JASMINE, DAWN } from '../test/fixtures.js';
 import CartDrawer from './CartDrawer.jsx';
@@ -39,6 +40,7 @@ beforeEach(() => {
   vi.stubGlobal('location', { ...window.location, assign });
 });
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
@@ -573,6 +575,231 @@ describe('CartDrawer: when checkout fails', () => {
 
     fireEvent.click(remove(DAWN_LABEL));
     expect(inDialog().queryByText('That item is no longer available.')).not.toBeInTheDocument();
+  });
+});
+
+// A fetch that is answered by hand: `finish(response)` is the answer arriving.
+function answerByHand() {
+  const hand = {};
+  fetchMock.mockReturnValue(
+    new Promise((resolve) => {
+      hand.finish = resolve;
+    }),
+  );
+  return hand;
+}
+
+// The signal the drawer gave its checkout request.
+const requestSignal = () => fetchMock.mock.calls[0][1].signal;
+
+describe('CartDrawer: a checkout request that takes too long', () => {
+  it('gives up after 20 seconds, says something went wrong, and lets the shopper try again', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    // A fetch that never answers, and fails as a real one does when it is aborted.
+    fetchMock.mockImplementation(
+      (_url, { signal }) =>
+        new Promise((_resolve, reject) => {
+          signal.addEventListener('abort', () =>
+            reject(new DOMException('The operation was aborted.', 'AbortError')),
+          );
+        }),
+    );
+    renderDrawer({ lines: [LOOSE] });
+    openDrawer();
+    fireEvent.click(checkoutButton());
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(CHECKOUT_TIMEOUT_MS - 1);
+    });
+    expect(checkoutButton()).toBeDisabled();
+    expect(inDialog().queryByRole('alert')).not.toBeInTheDocument();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(inDialog().getByRole('alert')).toHaveTextContent(GENERIC_ERROR);
+    expect(checkoutButton()).toBeEnabled();
+    expect(checkoutButton()).not.toHaveAttribute('aria-busy', 'true');
+    expect(assign).not.toHaveBeenCalled();
+    expect(saved()).toEqual([LOOSE]);
+  });
+});
+
+describe('CartDrawer: closed while the checkout request is out', () => {
+  it.each([
+    ['the Close button', () => fireEvent.click(closeButton())],
+    ['Escape', () => fireEvent.keyDown(document.activeElement, { key: 'Escape' })],
+    ['a click on the dimmed page', () => fireEvent.click(dialog().previousElementSibling)],
+    ['going to another page', () => fireEvent.click(screen.getByRole('button', { name: 'Go elsewhere' }))],
+  ])('stops the request, and sends nobody to Stripe, when the cart is closed by %s', async (_how, closeIt) => {
+    const hand = answerByHand();
+    renderDrawer({ lines: [LOOSE] });
+    openDrawer();
+    fireEvent.click(checkoutButton());
+    expect(requestSignal().aborted).toBe(false);
+
+    closeIt();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(requestSignal().aborted).toBe(true);
+
+    // An answer that gets through anyway goes nowhere.
+    await act(async () => hand.finish(reply(200, { url: STRIPE_URL })));
+    expect(assign).not.toHaveBeenCalled();
+  });
+
+  it('stops the request, and sends nobody to Stripe, when the page is taken away', async () => {
+    const hand = answerByHand();
+    const { unmount } = renderDrawer({ lines: [LOOSE] });
+    openDrawer();
+    fireEvent.click(checkoutButton());
+
+    unmount();
+    expect(requestSignal().aborted).toBe(true);
+
+    await act(async () => hand.finish(reply(200, { url: STRIPE_URL })));
+    expect(assign).not.toHaveBeenCalled();
+  });
+
+  it('shows nothing from the old request when the cart is opened again', async () => {
+    const hand = answerByHand();
+    renderDrawer({ lines: [LOOSE] });
+    openDrawer();
+    fireEvent.click(checkoutButton());
+    fireEvent.click(closeButton());
+    openDrawer();
+
+    await act(async () => hand.finish(reply(400, { error: 'That item is no longer available.' })));
+
+    expect(inDialog().queryByText('That item is no longer available.')).not.toBeInTheDocument();
+    expect(inDialog().queryByRole('alert')).not.toBeInTheDocument();
+    expect(checkoutButton()).toBeEnabled();
+    expect(checkoutButton()).not.toHaveAttribute('aria-busy', 'true');
+    expect(assign).not.toHaveBeenCalled();
+  });
+
+  it('can check out from the cart it was opened again to', async () => {
+    const hand = answerByHand();
+    renderDrawer({ lines: [LOOSE] });
+    openDrawer();
+    fireEvent.click(checkoutButton());
+    fireEvent.click(closeButton());
+    await act(async () => hand.finish(reply(200, { url: STRIPE_URL })));
+
+    fetchMock.mockResolvedValue(reply(200, { url: STRIPE_URL }));
+    openDrawer();
+    fireEvent.click(checkoutButton());
+
+    await vi.waitFor(() => expect(assign).toHaveBeenCalledWith(STRIPE_URL));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(assign).toHaveBeenCalledTimes(1);
+  });
+
+});
+
+describe('CartDrawer: while the checkout request is out', () => {
+  const lines = [LOOSE, GROUND]; // two of the first, one of the second
+
+  function startCheckoutOf(cart = lines) {
+    const hand = answerByHand();
+    renderDrawer({ lines: cart });
+    openDrawer();
+    fireEvent.click(checkoutButton());
+    return hand;
+  }
+
+  it('turns off every quantity stepper and every Remove button', () => {
+    answerByHand();
+    renderDrawer({ lines });
+    openDrawer();
+    // The first line is at 2, so both of its steppers are on until Checkout is pressed.
+    for (const label of [JASMINE_LABEL, DAWN_LABEL]) {
+      expect(more(label)).toBeEnabled();
+      expect(remove(label)).toBeEnabled();
+    }
+    expect(fewer(JASMINE_LABEL)).toBeEnabled();
+
+    fireEvent.click(checkoutButton());
+
+    for (const label of [JASMINE_LABEL, DAWN_LABEL]) {
+      expect(more(label)).toBeDisabled();
+      expect(fewer(label)).toBeDisabled();
+      expect(remove(label)).toBeDisabled();
+    }
+  });
+
+  it('changes nothing when they are pressed anyway', () => {
+    startCheckoutOf();
+    fireEvent.click(more(JASMINE_LABEL));
+    fireEvent.click(fewer(JASMINE_LABEL));
+    fireEvent.click(remove(DAWN_LABEL));
+    expect(saved()).toEqual([LOOSE, GROUND]);
+    expect(qtyOf(JASMINE_LABEL).getByText('2')).toBeInTheDocument();
+    expect(inDialog().getByRole('link', { name: 'Dawn Roast' })).toBeInTheDocument();
+  });
+
+  it('turns them on again after a failure, keeping the limits of 1 and the most allowed', async () => {
+    const atMost = line('dawn-roast', 'ground-12oz', MAX_QTY);
+    const atLeast = line('jasmine-dream', 'loose-leaf-2oz', 1);
+    const hand = startCheckoutOf([atLeast, atMost]);
+
+    await act(async () => hand.finish(reply(400, { error: 'That item is no longer available.' })));
+
+    expect(remove(JASMINE_LABEL)).toBeEnabled();
+    expect(remove(DAWN_LABEL)).toBeEnabled();
+    expect(more(JASMINE_LABEL)).toBeEnabled();
+    expect(fewer(DAWN_LABEL)).toBeEnabled();
+    // The limits still hold.
+    expect(fewer(JASMINE_LABEL)).toBeDisabled();
+    expect(more(DAWN_LABEL)).toBeDisabled();
+  });
+
+  it('turns them on again when the request times out', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    fetchMock.mockImplementation(
+      (_url, { signal }) =>
+        new Promise((_resolve, reject) => {
+          signal.addEventListener('abort', () =>
+            reject(new DOMException('The operation was aborted.', 'AbortError')),
+          );
+        }),
+    );
+    renderDrawer({ lines });
+    openDrawer();
+    fireEvent.click(checkoutButton());
+    expect(remove(JASMINE_LABEL)).toBeDisabled();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(CHECKOUT_TIMEOUT_MS);
+    });
+    expect(remove(JASMINE_LABEL)).toBeEnabled();
+    expect(more(JASMINE_LABEL)).toBeEnabled();
+  });
+
+  it('keeps them off once Stripe has the shopper, while the browser leaves', async () => {
+    fetchMock.mockResolvedValue(reply(200, { url: STRIPE_URL }));
+    renderDrawer({ lines });
+    openDrawer();
+    fireEvent.click(checkoutButton());
+    await vi.waitFor(() => expect(assign).toHaveBeenCalled());
+
+    expect(remove(JASMINE_LABEL)).toBeDisabled();
+    expect(more(JASMINE_LABEL)).toBeDisabled();
+    expect(fewer(JASMINE_LABEL)).toBeDisabled();
+  });
+
+  it('turns them on again with Checkout when the page comes back from the browser cache', async () => {
+    fetchMock.mockResolvedValue(reply(200, { url: STRIPE_URL }));
+    renderDrawer({ lines });
+    openDrawer();
+    fireEvent.click(checkoutButton());
+    await vi.waitFor(() => expect(assign).toHaveBeenCalled());
+
+    act(() => {
+      window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+    });
+    expect(checkoutButton()).toBeEnabled();
+    expect(remove(JASMINE_LABEL)).toBeEnabled();
+    expect(more(JASMINE_LABEL)).toBeEnabled();
   });
 });
 
