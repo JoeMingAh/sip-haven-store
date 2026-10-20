@@ -18,4 +18,12 @@ export default defineConfig([
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
   },
+  {
+    // Code that runs in Node (the scripts, the Vercel functions, the shared lib and the
+    // Vite config), so `process`, `Buffer` and the like are real here.
+    files: ['scripts/**/*.js', 'api/**/*.js', 'lib/**/*.js', 'vite.config.js'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 ])
