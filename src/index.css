@@ -3,6 +3,12 @@
 @tailwind utilities;
 
 @layer base {
+  /* Leave room for the sticky header when the page jumps to an anchor, such as
+     the Skip to content link, so the target is not hidden under it. */
+  html {
+    scroll-padding-top: 8rem;
+  }
+
   body {
     @apply bg-cream font-sans text-ink antialiased;
   }

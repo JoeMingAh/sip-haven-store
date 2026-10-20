@@ -145,3 +145,31 @@ describe('Header: the cart button', () => {
     expect(screen.getByRole('button', { name: 'Cart' })).toHaveTextContent(/^Cart$/);
   });
 });
+
+describe('sticky header', () => {
+  afterEach(() => {
+    window.scrollY = 0;
+  });
+
+  it('sticks to the top of the window above page content', () => {
+    renderHeader();
+    const header = screen.getByRole('banner');
+    expect(header).toHaveClass('sticky', 'top-0', 'z-30', 'bg-cream');
+  });
+
+  it('has no shadow at the top of the page and gains one once scrolled', () => {
+    renderHeader();
+    const header = screen.getByRole('banner');
+    expect(header).toHaveAttribute('data-scrolled', 'false');
+    expect(header).toHaveClass('shadow-none');
+
+    window.scrollY = 300;
+    fireEvent.scroll(window);
+    expect(header).toHaveAttribute('data-scrolled', 'true');
+    expect(header).toHaveClass('shadow-md');
+
+    window.scrollY = 0;
+    fireEvent.scroll(window);
+    expect(header).toHaveAttribute('data-scrolled', 'false');
+  });
+});
