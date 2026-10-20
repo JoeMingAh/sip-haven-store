@@ -52,6 +52,16 @@ describe('FreeShippingProgress', () => {
     expect(bar().firstElementChild).toHaveStyle({ width: '0%' });
   });
 
+  // The track is wood on a cream cart, which is 1.23:1, so on its own it cannot be seen
+  // and an empty bar looks like no bar. A sage outline (3.7:1 on cream) shows its length.
+  it.each([0, 4000, FREE_SHIPPING_CENTS])(
+    'outlines the track in sage at a subtotal of %i, so its whole length shows',
+    (cents) => {
+      render(<FreeShippingProgress subtotalCents={cents} />);
+      expect(bar()).toHaveClass('border', 'border-sage');
+    },
+  );
+
   it('fills the bar and stops at full once the shipping is earned', () => {
     render(<FreeShippingProgress subtotalCents={FREE_SHIPPING_CENTS * 3} />);
     expect(bar()).toHaveAttribute('aria-valuenow', String(FREE_SHIPPING_CENTS));

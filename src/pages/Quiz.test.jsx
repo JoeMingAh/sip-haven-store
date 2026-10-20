@@ -231,6 +231,18 @@ describe('Quiz: the questions', () => {
     }
   });
 
+  // The answers sit on the sage-tint panel. Plain sage is only 3.1:1 against it, thin for
+  // a 2px outline; sage-deep is 5.3:1. The cream fill and the wood hover fill are as before.
+  it('outlines the answers in sage-deep, not plain sage', () => {
+    renderQuiz();
+    const group = main().getByRole('group');
+    for (const button of within(group).getAllByRole('button')) {
+      expect(button).toHaveClass('border-2', 'border-sage-deep');
+      expect(button).not.toHaveClass('border-sage');
+      expect(button).toHaveClass('bg-cream', 'hover:bg-wood');
+    }
+  });
+
   it('groups the answers under their question, so a screen reader announces both', () => {
     renderQuiz();
     const group = main().getByRole('group');
@@ -298,6 +310,24 @@ describe('Quiz: progress', () => {
     expect(current).not.toBe(comingA);
     expect(done).not.toBe(comingA);
     expect(comingA).toBe(comingB);
+  });
+
+  // The coming dots are hollow rings on the sage-tint panel. Plain sage is only 3.1:1
+  // there, too faint for a thin outline; sage-deep is 5.3:1.
+  it('draws the coming dots as sage-deep rings, not plain sage rings', () => {
+    renderQuiz();
+    choose('Tea'); // now on question 2: one dot done, one current, two coming
+    const [done, current, comingA, comingB] = [...dotsOf(stepHeading()).children];
+    for (const dot of [comingA, comingB]) {
+      expect(dot).toHaveClass('border-2', 'border-sage-deep');
+      expect(dot).not.toHaveClass('border-sage');
+    }
+    // The ones behind and this one are filled, with no ring: filled against hollow stays
+    // a difference of shape, whatever the colors do.
+    for (const dot of [done, current]) {
+      expect(dot).toHaveClass('bg-sage-deep');
+      expect(dot).not.toHaveClass('border-2');
+    }
   });
 
   it('shows no dots and no question number on the result', () => {

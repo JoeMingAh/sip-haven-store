@@ -68,6 +68,12 @@ describe('SignupForm: the form', () => {
     expect(emailField()).not.toHaveAttribute('aria-invalid', 'true');
   });
 
+  it('draws the field border in sage-deep: plain sage is only 3.1:1 on the sage-tint panels it sits on', () => {
+    render(<SignupForm />);
+    expect(emailField()).toHaveClass('border-2', 'border-sage-deep');
+    expect(emailField()).not.toHaveClass('border-sage');
+  });
+
   it('gives two forms on one page their own field ids', () => {
     render(
       <>
@@ -219,6 +225,117 @@ describe('SignupForm: errors', () => {
     expect(field).toHaveAttribute('aria-invalid', 'true');
     expect(field).toHaveAccessibleDescription('Please enter a valid email.');
     expect(joinButton()).toBeEnabled();
+  });
+
+  // An error must not be told by its red alone: an alert icon leads the words, and the
+  // field itself looks different (see the next test).
+  it('puts an alert icon before the error text, hidden from assistive technology', async () => {
+    fetchMock.mockResolvedValue(reply(400, { error: 'Please enter a valid email.' }));
+    render(<SignupForm />);
+    const status = screen.getByRole('status');
+
+    submit('not-an-email');
+    await screen.findByText('Please enter a valid email.');
+
+    const icon = status.querySelector('svg.lucide-circle-alert');
+    expect(icon).not.toBeNull();
+    expect(icon).toHaveAttribute('aria-hidden', 'true');
+    // It leads the line, the way the tick leads the confirmation.
+    expect(status.firstChild).toBe(icon);
+    // The icon adds nothing to what is read out: the field's description is the words alone.
+    expect(emailField()).toHaveAccessibleDescription('Please enter a valid email.');
+  });
+
+  it('puts the alert icon before the generic message too', async () => {
+    fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
+    render(<SignupForm />);
+    submit('jane@example.com');
+    await screen.findByText(GENERIC_ERROR);
+
+    const status = screen.getByRole('status');
+    const icon = status.querySelector('svg.lucide-circle-alert');
+    expect(icon).not.toBeNull();
+    expect(status.firstChild).toBe(icon);
+  });
+
+  it('draws the alert icon the size of the confirmation tick, in the same kind of row', async () => {
+    fetchMock
+      .mockResolvedValueOnce(reply(400, { error: 'Please enter a valid email.' }))
+      .mockResolvedValueOnce(reply(200, { ok: true }));
+    render(<SignupForm />);
+    const status = screen.getByRole('status');
+
+    submit('oops');
+    await screen.findByText('Please enter a valid email.');
+    const alertIcon = status.querySelector('svg');
+    expect(alertIcon).toHaveClass('shrink-0');
+    expect(status).toHaveClass('flex', 'items-start', 'gap-2');
+
+    submit('jane@example.com');
+    await screen.findByText(SUCCESS_TEXT);
+    const tick = status.querySelector('svg');
+    expect(tick).toHaveClass('shrink-0');
+    expect(status).toHaveClass('flex', 'items-start', 'gap-2');
+    expect(tick).toHaveAttribute('width', alertIcon.getAttribute('width'));
+    expect(tick).toHaveAttribute('height', alertIcon.getAttribute('height'));
+  });
+
+  it('shows the alert icon only while an error is showing', async () => {
+    fetchMock
+      .mockResolvedValueOnce(reply(400, { error: 'Please enter a valid email.' }))
+      .mockResolvedValueOnce(reply(200, { ok: true }));
+    render(<SignupForm />);
+    const status = screen.getByRole('status');
+    const alertIcon = () => status.querySelector('svg.lucide-circle-alert');
+    expect(alertIcon()).toBeNull();
+
+    submit('oops');
+    await screen.findByText('Please enter a valid email.');
+    expect(alertIcon()).not.toBeNull();
+
+    submit('jane@example.com');
+    await screen.findByText(SUCCESS_TEXT);
+    expect(alertIcon()).toBeNull();
+    expect(status.querySelector('svg.lucide-check')).not.toBeNull();
+  });
+
+  it('takes the alert icon away with the message as soon as the next try starts', async () => {
+    let finish;
+    fetchMock
+      .mockResolvedValueOnce(reply(400, { error: 'Please enter a valid email.' }))
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+      );
+    render(<SignupForm />);
+    const status = screen.getByRole('status');
+
+    submit('oops');
+    await screen.findByText('Please enter a valid email.');
+    expect(status.querySelector('svg.lucide-circle-alert')).not.toBeNull();
+
+    submit('jane@example.com');
+    expect(status).toBeEmptyDOMElement();
+
+    finish(reply(200, { ok: true }));
+    await screen.findByText(SUCCESS_TEXT);
+  });
+
+  it('gives an invalid field a look that does not rest on hue: a thicker, dashed red border', async () => {
+    fetchMock.mockResolvedValue(reply(400, { error: 'Please enter a valid email.' }));
+    render(<SignupForm />);
+    submit('not-an-email');
+    await screen.findByText('Please enter a valid email.');
+
+    // The look is keyed to aria-invalid, so it is on exactly while the error is.
+    const field = emailField();
+    expect(field).toHaveAttribute('aria-invalid', 'true');
+    expect(field).toHaveClass(
+      'aria-[invalid=true]:border-4',
+      'aria-[invalid=true]:border-dashed',
+      'aria-[invalid=true]:border-red-800',
+    );
   });
 
   it('lets the server judge the address: a bad one is still sent', async () => {

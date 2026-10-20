@@ -5,6 +5,9 @@ import { formatPrice } from '../format.js';
  * How close the cart is to free shipping: a line of words and a bar that fills as
  * the subtotal nears FREE_SHIPPING_CENTS (lib/store-config.js). The bar reads as a
  * progress bar to a screen reader, with the same words as its value.
+ *
+ * The track is wood, which is only 1.23:1 on the cream cart, so it carries a sage
+ * outline (3.7:1) to show its whole length, empty or not.
  */
 export default function FreeShippingProgress({ subtotalCents }) {
   // Anything that is not a sensible amount counts as an empty cart.
@@ -28,7 +31,7 @@ export default function FreeShippingProgress({ subtotalCents }) {
         aria-valuemax={FREE_SHIPPING_CENTS}
         aria-valuenow={progress}
         aria-valuetext={message}
-        className="mt-2 h-2 overflow-hidden rounded-full bg-wood"
+        className="mt-2 h-2 overflow-hidden rounded-full border border-sage bg-wood"
       >
         <div
           className="h-full rounded-full bg-sage-deep transition-[width] motion-reduce:transition-none"

@@ -86,6 +86,92 @@ describe('VariantPicker: cups', () => {
   });
 });
 
+// The selected chip is a dark fill with cream text, which is a color change. It also
+// carries a tick, so the choice does not rest on color alone. The radios are hidden, so
+// the tick is the one sign of selection that is not the fill.
+describe('VariantPicker: the selected chip', () => {
+  // Lucide draws the tick as an svg whose class names it.
+  const ticksIn = (group) => [...group.querySelectorAll('svg.lucide-check')];
+  // The text of every chip in the group that has a tick.
+  const tickedChips = (group) =>
+    ticksIn(group).map((tick) => tick.closest('label').textContent);
+  // The chip a radio draws: the span that follows it.
+  const chipOf = (radio) => radio.nextElementSibling;
+
+  it('puts one tick, hidden from assistive technology, on the selected format and on the selected size', () => {
+    renderPicker({ variants: COFFEE, value: 'ground-2lb' });
+    for (const group of [formatGroup(), sizeGroup()]) {
+      const ticks = ticksIn(group);
+      expect(ticks).toHaveLength(1);
+      expect(ticks[0]).toHaveAttribute('aria-hidden', 'true');
+      // The radio in the same label as the tick is the checked one.
+      expect(within(ticks[0].closest('label')).getByRole('radio')).toBeChecked();
+    }
+    expect(tickedChips(formatGroup())).toEqual(['Ground']);
+    expect(tickedChips(sizeGroup())).toEqual(['2 lb about 100 cups']);
+  });
+
+  it('puts a tick on a chip if and only if it is selected', () => {
+    renderPicker({ variants: COFFEE, value: 'ground-2lb' });
+    const radios = [...radiosIn(formatGroup()), ...radiosIn(sizeGroup())];
+    // Two chips are selected (a format and a size) and two are not.
+    expect(radios.filter((radio) => radio.checked)).toHaveLength(2);
+    expect(radios.filter((radio) => !radio.checked)).toHaveLength(2);
+    for (const radio of radios) {
+      const hasTick = radio.closest('label').querySelector('svg') !== null;
+      expect(hasTick).toBe(radio.checked);
+    }
+  });
+
+  it('moves the tick when the selection moves', () => {
+    const { rerender } = render(
+      <VariantPicker variants={COFFEE} value="whole-bean-12oz" onChange={() => {}} />,
+    );
+    expect(tickedChips(formatGroup())).toEqual(['Whole bean']);
+    expect(tickedChips(sizeGroup())).toEqual(['12 oz about 40 cups']);
+
+    rerender(<VariantPicker variants={COFFEE} value="ground-2lb" onChange={() => {}} />);
+    expect(tickedChips(formatGroup())).toEqual(['Ground']);
+    expect(tickedChips(sizeGroup())).toEqual(['2 lb about 100 cups']);
+  });
+
+  it('shows a tick for the only format and the only size, too', () => {
+    renderPicker({ variants: [TEA[2]], value: 'tea-bags-15' });
+    expect(tickedChips(formatGroup())).toEqual(['Tea bags']);
+    expect(tickedChips(sizeGroup())).toEqual(['15 bags about 15 cups']);
+  });
+
+  it('ticks the first variant when the page has not chosen one', () => {
+    renderPicker({ variants: COFFEE, value: 'no-such-variant' });
+    expect(tickedChips(formatGroup())).toEqual(['Whole bean']);
+    expect(tickedChips(sizeGroup())).toEqual(['12 oz about 40 cups']);
+  });
+
+  it('keeps the tick where the page says, not where a click landed: the page owns the choice', () => {
+    renderPicker({ variants: COFFEE, value: 'whole-bean-12oz' });
+    fireEvent.click(within(formatGroup()).getByRole('radio', { name: 'Ground' }));
+    expect(tickedChips(formatGroup())).toEqual(['Whole bean']);
+  });
+
+  // The tick sits in the chip's left padding, so the words must start to its right: the
+  // selected chip is padded wider on the left than the others, and only that one.
+  it('makes room for the tick: only the selected chip has the extra left padding', () => {
+    renderPicker({ variants: COFFEE, value: 'ground-2lb' });
+    for (const group of [formatGroup(), sizeGroup()]) {
+      for (const radio of radiosIn(group)) {
+        const chip = chipOf(radio);
+        if (radio.checked) {
+          expect(chip).toHaveClass('pl-9');
+          expect(chip).not.toHaveClass('pl-4');
+        } else {
+          expect(chip).toHaveClass('pl-4');
+          expect(chip).not.toHaveClass('pl-9');
+        }
+      }
+    }
+  });
+});
+
 describe('VariantPicker: choosing', () => {
   it('sends the chosen variantId when a size is picked', () => {
     const onChange = renderPicker({ variants: COFFEE, value: 'ground-12oz' });

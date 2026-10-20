@@ -43,12 +43,13 @@ function StepHeading({ id, grabFocus, className, children }) {
 
 // One dot per question: the ones behind you are filled, this one is a longer filled
 // pill, and the ones ahead are hollow. It is only decoration (the question number is
-// in the heading, as text), so assistive technology skips it.
+// in the heading, as text), so assistive technology skips it. The hollow ones sit on
+// the sage-tint panel, where plain sage is only 3.1:1, so their ring is sage-deep.
 function Dots({ step }) {
   return (
     <div aria-hidden="true" className="flex items-center justify-center gap-2">
       {QUIZ_QUESTIONS.map((question, index) => {
-        let look = 'w-2.5 border-2 border-sage';
+        let look = 'w-2.5 border-2 border-sage-deep';
         if (index < step) look = 'w-2.5 bg-sage-deep';
         if (index === step) look = 'w-7 bg-sage-deep';
         return <span key={question.id} className={`h-2.5 rounded-full ${look}`} />;
@@ -59,7 +60,9 @@ function Dots({ step }) {
 
 // One answer. It is a real button; pressing it records the answer and moves on. The
 // answer already given (when the shopper has come back to this question) is marked
-// with aria-current, a fill and a tick, so it does not rest on color alone.
+// with aria-current, a fill and a tick, so it does not rest on color alone. The
+// others are outlined in sage-deep, since they sit on the sage-tint panel, where plain
+// sage is only 3.1:1.
 function Answer({ answer, chosen, onChoose }) {
   function handleClick(event) {
     // A double click would land its second click on the next question's button, which
@@ -76,7 +79,7 @@ function Answer({ answer, chosen, onChoose }) {
       className={`flex min-h-14 w-full items-center gap-3 rounded-2xl border-2 px-5 py-3 text-left transition-colors motion-reduce:transition-none ${
         chosen
           ? 'border-sage-deep bg-sage-deep text-cream'
-          : 'border-sage bg-cream text-ink hover:border-sage-deep hover:bg-wood'
+          : 'border-sage-deep bg-cream text-ink hover:bg-wood'
       }`}
     >
       <span className="min-w-0 flex-1">

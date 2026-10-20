@@ -28,6 +28,8 @@ const UNAVAILABLE_BUTTON =
   'inline-flex min-h-12 w-full cursor-not-allowed items-center justify-center rounded-full bg-wood px-8 text-base font-semibold text-ink sm:w-auto';
 
 // The main picture, and a row of small ones to switch between when there are several.
+// The one showing has a sage-deep border and full strength; the others are dimmed, so
+// which is chosen is not told by the border's color alone. Both follow aria-pressed.
 // With no photos yet it shows the placeholder art, which is decoration.
 function Gallery({ product }) {
   const photos = product.images ?? [];
@@ -58,7 +60,7 @@ function Gallery({ product }) {
                 aria-label={`Show photo ${position + 1} of ${photos.length}`}
                 aria-pressed={position === index}
                 onClick={() => setIndex(position)}
-                className={`block h-16 w-16 overflow-hidden rounded-2xl border-2 border-transparent aria-pressed:border-sage-deep ${tile}`}
+                className={`block h-16 w-16 overflow-hidden rounded-2xl border-2 border-transparent opacity-70 aria-pressed:border-sage-deep aria-pressed:opacity-100 ${tile}`}
               >
                 <img src={src} alt="" className="h-full w-full object-cover" />
               </button>

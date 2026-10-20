@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { Check } from 'lucide-react';
+import { Check, CircleAlert } from 'lucide-react';
 import { isStoreOpen } from '../../lib/store-config.js';
 import { GENERIC_ERROR, errorFrom } from '../apiError.js';
 
@@ -21,6 +21,10 @@ const OPEN_SUCCESS_MESSAGE = "You're on the list. We'll keep you posted on new t
  * `interest` ('tea', 'coffee' or 'both') is sent along when the caller knows it.
  * The status line below is a live region that is always in the page, so a screen
  * reader announces the confirmation or the error when its text appears.
+ *
+ * An error is not told by its red alone. An alert icon leads the words, as a tick leads
+ * the confirmation, and while the field is aria-invalid its border turns thick, dashed
+ * and red-800, a difference of line as well as of hue.
  */
 export default function SignupForm({ interest }) {
   const fieldId = useId();
@@ -31,6 +35,7 @@ export default function SignupForm({ interest }) {
 
   const isSending = status === 'sending';
   const isDone = status === 'done';
+  const hasError = !isDone && error !== '';
   const message = isDone ? (isStoreOpen() ? OPEN_SUCCESS_MESSAGE : SUCCESS_MESSAGE) : error;
 
   async function handleSubmit(event) {
@@ -77,7 +82,7 @@ export default function SignupForm({ interest }) {
               onChange={(event) => setEmail(event.target.value)}
               aria-invalid={error ? 'true' : undefined}
               aria-describedby={error ? statusId : undefined}
-              className="min-h-12 w-full min-w-0 rounded-full border-2 border-sage bg-cream px-5 text-base text-ink sm:flex-1"
+              className="min-h-12 w-full min-w-0 rounded-full border-2 border-sage-deep bg-cream px-5 text-base text-ink aria-[invalid=true]:border-4 aria-[invalid=true]:border-dashed aria-[invalid=true]:border-red-800 sm:flex-1"
             />
             <button
               type="submit"
@@ -97,10 +102,11 @@ export default function SignupForm({ interest }) {
         className={
           isDone
             ? 'flex items-start gap-2 text-base font-semibold text-sage-deep'
-            : `text-sm font-semibold text-red-800${error ? ' mt-3' : ''}`
+            : `text-sm font-semibold text-red-800${hasError ? ' mt-3 flex items-start gap-2' : ''}`
         }
       >
         {isDone && <Check aria-hidden="true" size={20} className="mt-0.5 shrink-0" />}
+        {hasError && <CircleAlert aria-hidden="true" size={20} className="shrink-0" />}
         {message}
       </p>
     </div>

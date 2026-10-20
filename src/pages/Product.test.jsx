@@ -455,6 +455,28 @@ describe('Product: the gallery', () => {
     expect(thumbs[2]).toHaveAttribute('aria-pressed', 'true');
     expect(thumbs[0]).toHaveAttribute('aria-pressed', 'false');
   });
+
+  // The photo showing was told apart by a 2px border in one green. The other thumbnails
+  // are dimmed as well, so the choice is also a difference in strength. Both follow
+  // aria-pressed, which the page sets on the one showing: every thumbnail is opacity-70,
+  // and aria-pressed:opacity-100 lifts the pressed one to full, as aria-pressed:border-sage-deep
+  // draws its border. (A stylesheet is not loaded here, so the classes are what is checked.)
+  it('dims the thumbnails and lifts the one that is showing, with its border', () => {
+    shop.products = [{ ...JASMINE, images: ['/photos/a.jpg', '/photos/b.jpg', '/photos/c.jpg'] }];
+    renderAt('/products/jasmine-dream');
+    const thumbs = main().getAllByRole('button', { name: /^Show photo \d of 3$/ });
+    const pressed = () => thumbs.map((thumb) => thumb.getAttribute('aria-pressed'));
+
+    for (const thumb of thumbs) {
+      expect(thumb).toHaveClass('opacity-70', 'aria-pressed:opacity-100');
+      expect(thumb).toHaveClass('border-2', 'border-transparent', 'aria-pressed:border-sage-deep');
+    }
+    expect(pressed()).toEqual(['true', 'false', 'false']);
+
+    // The lift moves with the pressed state when another photo is chosen.
+    fireEvent.click(thumbs[1]);
+    expect(pressed()).toEqual(['false', 'true', 'false']);
+  });
 });
 
 describe('Product: choosing a variant', () => {

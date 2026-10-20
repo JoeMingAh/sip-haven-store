@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LoaderCircle, Minus, Plus, X } from 'lucide-react';
+import { CircleAlert, LoaderCircle, Minus, Plus, X } from 'lucide-react';
 import { findVariant } from '../../lib/catalog.js';
 import { MAX_QTY, isStoreOpen } from '../../lib/store-config.js';
 import { useCart } from '../cart/CartContext.jsx';
@@ -281,8 +281,10 @@ function CartSummary({ lines, subtotalCents, busy, onBusyChange }) {
       </p>
       <p className="mt-1 text-sm">Taxes calculated at checkout</p>
 
+      {/* An alert icon leads the words, so the failure is not told by its red alone. */}
       {error && (
-        <p role="alert" className="mt-3 text-sm font-semibold text-red-800">
+        <p role="alert" className="mt-3 flex items-start gap-2 text-sm font-semibold text-red-800">
+          <CircleAlert aria-hidden="true" size={20} className="shrink-0" />
           {error}
         </p>
       )}

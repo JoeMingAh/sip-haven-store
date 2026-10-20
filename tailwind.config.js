@@ -9,6 +9,8 @@ export default {
             // Garden Teahouse palette.
             // Contrast on cream: ink 10.8:1, sage-deep 6.3:1, sage 3.7:1. WCAG AA needs
             // 4.5:1 for small text, so keep `sage` for borders, icons and illustration.
+            // Those sit on cream. On sage-tint, sage drops to 3.1:1, so a border there
+            // uses sage-deep (5.3:1).
             // Cream text on sage is 3.7:1 and white on sage is 4.1:1, so a bar or button
             // that carries text uses sage-deep behind cream text (6.3:1), or sage-tint /
             // wood behind ink or sage-deep text (5.1:1 or better).

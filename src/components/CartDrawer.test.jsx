@@ -504,6 +504,38 @@ describe('CartDrawer: when checkout fails', () => {
     expect(checkoutButton()).toBeEnabled();
   });
 
+  // A failure must not be told by its red alone: an alert icon leads the words.
+  it('puts an alert icon before the message, hidden from assistive technology', async () => {
+    fetchMock.mockResolvedValue(reply(400, { error: 'That item is no longer available.' }));
+    renderDrawer({ lines: [LOOSE] });
+    openDrawer();
+    // No failure yet, so no icon either.
+    expect(dialog().querySelector('svg.lucide-circle-alert')).toBeNull();
+
+    fireEvent.click(checkoutButton());
+    const message = await inDialog().findByRole('alert');
+
+    const icon = message.querySelector('svg.lucide-circle-alert');
+    expect(icon).not.toBeNull();
+    expect(icon).toHaveAttribute('aria-hidden', 'true');
+    // It leads the line, and does not shrink when the message wraps.
+    expect(message.firstChild).toBe(icon);
+    expect(icon).toHaveClass('shrink-0');
+    expect(message).toHaveClass('flex', 'items-start', 'gap-2');
+    expect(message).toHaveTextContent('That item is no longer available.');
+  });
+
+  it("draws the alert icon at 20px, the size of the signup form's icons", async () => {
+    fetchMock.mockResolvedValue(reply(500, {}));
+    renderDrawer({ lines: [LOOSE] });
+    openDrawer();
+    fireEvent.click(checkoutButton());
+
+    const icon = (await inDialog().findByRole('alert')).querySelector('svg.lucide-circle-alert');
+    expect(icon).toHaveAttribute('width', '20');
+    expect(icon).toHaveAttribute('height', '20');
+  });
+
   it.each([
     [400, 'Quantity must be between 1 and 20.'],
     [403, 'Store is not open yet.'],
