@@ -15,7 +15,11 @@ export default function Layout() {
       </a>
       <ShippingStrip />
       <Header />
-      <main id="main" className="flex-1">
+      {/* scroll-mt: when Skip to content jumps here, stop below the sticky header (two
+          rows on small screens, one from md up) instead of under it. It is set on
+          <main> only, not as scroll-padding on <html>: that would also make the
+          browser scroll to the top whenever focus lands in the header. */}
+      <main id="main" className="flex-1 scroll-mt-28 md:scroll-mt-20">
         <Outlet />
       </main>
       <Footer />

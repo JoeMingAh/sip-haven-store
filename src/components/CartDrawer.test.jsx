@@ -1003,6 +1003,17 @@ describe('CartDrawer: focus', () => {
     expect(opener).toHaveFocus();
   });
 
+  // The Cart button sits in the sticky header. A plain focus() lets the browser scroll
+  // the page to "reveal" it, which threw a scrolled shopper back to the top on close.
+  it('gives focus back without scrolling the page', () => {
+    renderDrawer({ lines: [LOOSE] });
+    const opener = openDrawer();
+    const focus = vi.spyOn(opener, 'focus');
+    fireEvent.click(closeButton());
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    expect(opener).toHaveFocus();
+  });
+
   it('gives focus back to the opener after the Close button too', () => {
     renderDrawer({ lines: [LOOSE] });
     const opener = openDrawer();
