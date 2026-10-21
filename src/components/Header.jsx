@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { ShoppingBag } from 'lucide-react';
 import { isStoreOpen } from '../../lib/store-config.js';
@@ -39,11 +40,38 @@ function CartButton() {
   );
 }
 
+// True once the page has scrolled away from the very top, so the header can lift
+// off the page with a shadow while it rides along.
+function useScrolled() {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const update = () => setScrolled(window.scrollY > 0);
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    return () => window.removeEventListener('scroll', update);
+  }, []);
+
+  return scrolled;
+}
+
 // Small screens: the wordmark and Cart share the first row and the links wrap onto
 // a second row. From md up everything sits on one row.
+//
+// The header sticks to the top of the window as the page scrolls, so the links and
+// the Cart button are always one tap away. The shipping strip above it scrolls off.
+// z-30 keeps it over page content and under the cart drawer (z-40) and the skip
+// link (z-50). The shadow only appears once the page has moved.
 export default function Header() {
+  const scrolled = useScrolled();
+
   return (
-    <header className="border-b border-wood bg-cream">
+    <header
+      data-scrolled={scrolled}
+      className={`sticky top-0 z-30 border-b border-wood bg-cream transition-shadow ${
+        scrolled ? 'shadow-md' : 'shadow-none'
+      }`}
+    >
       <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto] items-center gap-x-4 px-4 py-2 md:grid-cols-[auto_1fr_auto] md:gap-x-10 md:py-3">
         <Link
           to="/"

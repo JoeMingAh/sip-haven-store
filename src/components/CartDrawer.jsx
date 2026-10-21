@@ -80,7 +80,10 @@ function useModal(panelRef, onClose) {
       document.body.style.overflow = pageOverflow;
       // Nothing had focus when the cart opened from a route (see Cart.jsx): the opener is
       // then the page itself, and there is nothing to give focus back to.
-      if (opener instanceof HTMLElement && opener.isConnected) opener.focus();
+      // preventScroll: the opener is usually the Cart button in the sticky header, and
+      // letting the browser scroll it "into view" could move the page the shopper was
+      // reading. Closing the cart leaves them exactly where they were.
+      if (opener instanceof HTMLElement && opener.isConnected) opener.focus({ preventScroll: true });
     };
   }, [panelRef, onClose]);
 }

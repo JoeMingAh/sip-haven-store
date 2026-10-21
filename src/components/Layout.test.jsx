@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { createMemoryRouter, matchRoutes, RouterProvider } from 'react-router-dom';
@@ -93,5 +96,21 @@ describe('routes', () => {
       expect(matches, `${href} matches no route`).not.toBeNull();
       expect(matches.at(-1).route.path, `${href} only matches the NotFound route`).not.toBe('*');
     }
+  });
+});
+
+describe('sticky header spacing', () => {
+  // Skip to content must stop below the sticky header, and only <main> carries that
+  // offset. A scroll-padding on <html> would also scroll the page to the top whenever
+  // focus lands in the header (closing the cart, tabbing back up).
+  it('gives <main> a scroll margin for the sticky header', () => {
+    renderAt('/');
+    expect(screen.getByRole('main')).toHaveClass('scroll-mt-28', 'md:scroll-mt-20');
+  });
+
+  it('puts no scroll-padding on the page itself', () => {
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(path.join(here, '..', 'index.css'), 'utf8');
+    expect(css).not.toMatch(/scroll-padding/);
   });
 });
