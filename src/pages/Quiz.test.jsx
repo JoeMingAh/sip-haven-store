@@ -209,7 +209,7 @@ describe('Quiz: the questions', () => {
     QUESTIONS.forEach((prompt, index) => expect(asked[index]).toContain(prompt));
   });
 
-  it('asks "Tea or coffee today?" first, and how they want to feel right after, with the five moods', () => {
+  it('asks "Tea or coffee today?" first, and how they want to feel right after, with the five moods and Surprise me', () => {
     renderQuiz();
     expect(stepHeading()).toHaveTextContent('Tea or coffee today?');
     choose('Tea');
@@ -221,6 +221,7 @@ describe('Quiz: the questions', () => {
       'Energized and ready',
       'Cozy and comforted',
       'Light and refreshed',
+      'Surprise me No preference',
     ]);
     choose('Energized and ready');
     expect(stepHeading()).toHaveTextContent('How much caffeine would you like?');
