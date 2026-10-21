@@ -8,6 +8,7 @@ vi.mock('@vercel/blob', () => ({ put: blob.put }));
 
 const NOTE = {
   drink: 'tea',
+  mood: 'calm',
   caffeine: 'none',
   flavor: 'floral',
   aroma: 'citrus',
@@ -67,11 +68,12 @@ describe('saving a note', () => {
     });
   });
 
-  it('stores the five answers, the picks count and whether the store was open', async () => {
+  it('stores the six answers, the picks count and whether the store was open', async () => {
     await post({ ...NOTE, picks: 2 });
 
     expect(stored().note).toEqual({
       drink: 'tea',
+      mood: 'calm',
       caffeine: 'none',
       flavor: 'floral',
       aroma: 'citrus',
@@ -79,6 +81,12 @@ describe('saving a note', () => {
       picks: 2,
       storeOpen: false,
     });
+  });
+
+  it('keeps the mood of a no-match quiz', async () => {
+    await post({ drink: 'tea', mood: 'cozy', caffeine: 'none', picks: 0 });
+
+    expect(stored().note).toMatchObject({ mood: 'cozy', caffeine: 'none', picks: 0 });
   });
 
   it('keeps the flavor and the aroma of a no-match quiz', async () => {
@@ -133,7 +141,7 @@ describe('no personal data', () => {
 
     const { note, json, pathname } = stored();
     expect(Object.keys(note).sort()).toEqual(
-      ['aroma', 'caffeine', 'drink', 'flavor', 'picks', 'storeOpen', 'style'].sort(),
+      ['aroma', 'caffeine', 'drink', 'flavor', 'mood', 'picks', 'storeOpen', 'style'].sort(),
     );
     for (const text of [json, pathname]) {
       expect(text).not.toContain('jane');
@@ -145,11 +153,12 @@ describe('no personal data', () => {
 
 describe('validation', () => {
   it('stores an unknown answer id as null and keeps the rest', async () => {
-    const res = await post({ ...NOTE, caffeine: 'extreme', aroma: 'lemon', style: '<script>' });
+    const res = await post({ ...NOTE, mood: 'sleepy', caffeine: 'extreme', aroma: 'lemon', style: '<script>' });
 
     expect(res.statusCode).toBe(200);
     expect(stored().note).toMatchObject({
       drink: 'tea',
+      mood: null,
       caffeine: null,
       flavor: 'floral',
       aroma: null,

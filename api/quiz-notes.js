@@ -16,7 +16,7 @@ function bodySize(req) {
 }
 
 /**
- * POST /api/quiz-notes  { drink, caffeine, flavor, aroma, style, picks }
+ * POST /api/quiz-notes  { drink, mood, caffeine, flavor, aroma, style, picks }
  *
  * Keeps an anonymous note of quiz answers the lineup could not fully answer (see
  * lib/quiz-notes.js), as one private JSON file in Vercel Blob. Only the answer ids and

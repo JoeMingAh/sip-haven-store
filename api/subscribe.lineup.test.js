@@ -47,10 +47,26 @@ vi.mock('../src/data/lineup.json', () => {
           caffeine: 'medium',
           tags: ['fruity'],
           aromas: ['lemon', 'grassy'],
+          moods: [],
           variants: sold('loose-leaf'),
         }),
-        tea('berry-medley', { caffeine: 'medium', tags: ['fruity'], aromas: ['vanilla'] }),
-        tea('jasmine-pearls', { caffeine: 'low', tags: ['floral'], aromas: ['jasmine'] }),
+        // These two fit equally on taste; only their moods tell them apart.
+        tea('berry-medley', { caffeine: 'medium', tags: ['fruity'], aromas: ['vanilla'], moods: ['cozy'] }),
+        tea('hibiscus-cooler', {
+          caffeine: 'medium',
+          tags: ['fruity'],
+          aromas: ['vanilla'],
+          moods: ['refreshed'],
+        }),
+        tea('jasmine-pearls', { caffeine: 'low', tags: ['floral'], aromas: ['jasmine'], moods: ['calm'] }),
+        // Blank moods and blank aromas, as Joe may leave them.
+        tea('house-green', {
+          caffeine: 'low',
+          tags: ['floral'],
+          aromas: [],
+          moods: [],
+          variants: sold('loose-leaf'),
+        }),
       ],
     },
   };
@@ -85,14 +101,56 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-const ANSWERS = { drink: 'tea', caffeine: 'medium', flavor: 'fruity', aroma: 'citrus', style: 'ritual' };
+const ANSWERS = {
+  drink: 'tea',
+  mood: 'refreshed',
+  caffeine: 'medium',
+  flavor: 'fruity',
+  aroma: 'citrus',
+  style: 'ritual',
+};
+
+const picksFor = (answers) => recommend(answers, getProducts()).map((product) => product.slug);
 
 describe('a quiz signup with a test lineup', () => {
   it('ranks first the product whose tags and aromas best fit the answers', () => {
-    // lemon-sencha: medium, fruity, lemon, loose leaf (8 + 4 + 2 + 1). berry-medley:
-    // medium and fruity (8 + 4). smoky-oolong: medium only (8).
-    const picks = recommend(ANSWERS, getProducts()).map((product) => product.slug);
-    expect(picks).toEqual(['lemon-sencha', 'berry-medley', 'smoky-oolong']);
+    // lemon-sencha: medium, fruity, lemon, loose leaf (16 + 8 + 4 + 1), with no moods.
+    // hibiscus-cooler: medium, fruity and refreshed (16 + 8 + 2). berry-medley: medium and
+    // fruity (16 + 8). smoky-oolong: medium only (16).
+    expect(picksFor(ANSWERS)).toEqual(['lemon-sencha', 'hibiscus-cooler', 'berry-medley']);
+  });
+
+  it('lets the mood break the tie between berry-medley and hibiscus-cooler', () => {
+    const noMood = { ...ANSWERS };
+    delete noMood.mood;
+    // With no mood they tie on 24 and keep lineup order.
+    expect(picksFor(noMood)).toEqual(['lemon-sencha', 'berry-medley', 'hibiscus-cooler']);
+    expect(picksFor({ ...ANSWERS, mood: 'cozy' })).toEqual(['lemon-sencha', 'berry-medley', 'hibiscus-cooler']);
+    expect(picksFor({ ...ANSWERS, mood: 'refreshed' })).toEqual([
+      'lemon-sencha',
+      'hibiscus-cooler',
+      'berry-medley',
+    ]);
+  });
+
+  it('does not let the mood override the caffeine choice', () => {
+    // jasmine-pearls is calm, but low caffeine; the medium teas still come first.
+    expect(picksFor({ ...ANSWERS, mood: 'calm' })).not.toContain('jasmine-pearls');
+  });
+
+  it('recommends a product with blank moods and blank aromas, and saves it as the top match', async () => {
+    const answers = { drink: 'tea', mood: 'focused', caffeine: 'low', flavor: 'floral', aroma: 'citrus', style: 'ritual' };
+    // house-green: low, floral, loose leaf (16 + 8 + 1), with nothing in either column.
+    // jasmine-pearls: low and floral (16 + 8). earl-grey: floral only (8).
+    const picks = picksFor(answers);
+    expect(picks).toEqual(['house-green', 'jasmine-pearls', 'earl-grey']);
+
+    await post({ email: 'jane@example.com', answers, topMatch: picks[0], matches: picks, source: 'quiz' });
+    expect(resend.createContact.mock.calls[0][0].properties).toMatchObject({
+      quiz_mood: 'focused',
+      quiz_top_match: 'house-green',
+      quiz_matches: 'house-green,jasmine-pearls,earl-grey',
+    });
   });
 
   it('saves the on-screen picks as quiz_matches, with the first as quiz_top_match', async () => {
@@ -110,12 +168,13 @@ describe('a quiz signup with a test lineup', () => {
     expect(resend.createContact.mock.calls[0][0].properties).toEqual({
       interest: 'tea',
       signup_source: 'quiz',
+      quiz_mood: 'refreshed',
       quiz_caffeine: 'medium',
       quiz_flavor: 'fruity',
       quiz_aroma: 'citrus',
       quiz_style: 'ritual',
       quiz_top_match: 'lemon-sencha',
-      quiz_matches: 'lemon-sencha,berry-medley,smoky-oolong',
+      quiz_matches: 'lemon-sencha,hibiscus-cooler,berry-medley',
     });
   });
 

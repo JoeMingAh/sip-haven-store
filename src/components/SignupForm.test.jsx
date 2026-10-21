@@ -135,7 +135,7 @@ describe('SignupForm: what it posts', () => {
 
   it("sends the quiz's answers, its picks and source 'quiz' when the quiz passes them", async () => {
     fetchMock.mockResolvedValue(reply(200, { ok: true }));
-    const answers = { drink: 'tea', caffeine: 'none', flavor: 'floral', aroma: 'fresh', style: 'ritual' };
+    const answers = { drink: 'tea', mood: 'cozy', caffeine: 'none', flavor: 'floral', aroma: 'fresh', style: 'ritual' };
     const matches = ['chamomile-meadow', 'mint-calm'];
     render(
       <SignupForm answers={answers} topMatch="chamomile-meadow" matches={matches} source="quiz" />,

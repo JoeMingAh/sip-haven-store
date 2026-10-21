@@ -1,6 +1,6 @@
 // Counts the quiz notes (see lib/quiz-notes.js) for the weekly summary: every note
 // saved in the last N days, grouped by answer combination, most common first, then
-// counted by flavor and by aroma on their own, so unmet flavor and aroma demand shows
+// counted by mood, by flavor and by aroma on their own, so unmet demand for each shows
 // up even when the combinations are spread thin. The notes are anonymous: answers and
 // a picks count only.
 //
@@ -21,8 +21,9 @@ const USAGE = 'Usage: npm run quiz-notes:summary [-- <days>]   (days is a whole 
 
 const count = (number, word) => `${number} ${word}${number === 1 ? '' : 's'}`;
 
-// The questions the summary also counts on their own, with their headings.
+// The questions the summary also counts on their own, with their headings, in quiz order.
 const PER_ANSWER = [
+  ['mood', 'By mood'],
   ['flavor', 'By flavor'],
   ['aroma', 'By aroma'],
 ];
@@ -85,7 +86,7 @@ export function countCombos(notes) {
   return [...rows.values()].sort(byCount((row) => comboText(row.answers)));
 }
 
-// 'tea / none / floral / citrus / ritual'
+// 'tea / calm / none / floral / citrus / ritual'
 const comboText = (answers) => NOTE_ANSWER_FIELDS.map((field) => answers[field]).join(' / ');
 
 /**

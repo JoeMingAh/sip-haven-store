@@ -12,8 +12,9 @@ import {
 // None of these tests can reach Vercel Blob: runCli and the helpers are handed a
 // pretend store (fakeStore below) in place of @vercel/blob's list and get.
 
-const note = (drink, caffeine, flavor, aroma, style, picks = 0) => ({
+const note = (drink, mood, caffeine, flavor, aroma, style, picks = 0) => ({
   drink,
+  mood,
   caffeine,
   flavor,
   aroma,
@@ -23,8 +24,8 @@ const note = (drink, caffeine, flavor, aroma, style, picks = 0) => ({
 });
 
 // Two notes that come up again and again below.
-const TEA = () => note('tea', 'none', 'floral', 'citrus', 'ritual');
-const COFFEE = () => note('coffee', 'high', 'earthy', 'toasty', 'quick');
+const TEA = () => note('tea', 'calm', 'none', 'floral', 'citrus', 'ritual');
+const COFFEE = () => note('coffee', 'energized', 'high', 'earthy', 'toasty', 'quick');
 
 // A get() result for a note, the way @vercel/blob hands one back: a stream of its JSON.
 const found = (value) => ({
@@ -114,37 +115,42 @@ describe('countCombos', () => {
     const rows = countCombos([
       COFFEE(),
       TEA(),
-      note('tea', 'none', 'floral', 'citrus', 'ritual', 2),
+      note('tea', 'calm', 'none', 'floral', 'citrus', 'ritual', 2),
       TEA(),
       COFFEE(),
-      note('either', 'low', 'fruity', 'either', 'either'),
+      note('either', 'cozy', 'low', 'fruity', 'either', 'either'),
     ]);
 
     expect(rows).toEqual([
       {
-        answers: { drink: 'tea', caffeine: 'none', flavor: 'floral', aroma: 'citrus', style: 'ritual' },
+        answers: { drink: 'tea', mood: 'calm', caffeine: 'none', flavor: 'floral', aroma: 'citrus', style: 'ritual' },
         count: 3,
       },
       {
-        answers: { drink: 'coffee', caffeine: 'high', flavor: 'earthy', aroma: 'toasty', style: 'quick' },
+        answers: { drink: 'coffee', mood: 'energized', caffeine: 'high', flavor: 'earthy', aroma: 'toasty', style: 'quick' },
         count: 2,
       },
       {
-        answers: { drink: 'either', caffeine: 'low', flavor: 'fruity', aroma: 'either', style: 'either' },
+        answers: { drink: 'either', mood: 'cozy', caffeine: 'low', flavor: 'fruity', aroma: 'either', style: 'either' },
         count: 1,
       },
     ]);
   });
 
+  it('tells apart notes that differ only in their mood', () => {
+    const rows = countCombos([TEA(), note('tea', 'cozy', 'none', 'floral', 'citrus', 'ritual')]);
+    expect(rows.map((row) => row.answers.mood)).toEqual(['calm', 'cozy']);
+  });
+
   it('tells apart notes that differ only in their aroma', () => {
-    const rows = countCombos([TEA(), note('tea', 'none', 'floral', 'fresh', 'ritual')]);
+    const rows = countCombos([TEA(), note('tea', 'calm', 'none', 'floral', 'fresh', 'ritual')]);
     expect(rows.map((row) => row.answers.aroma)).toEqual(['citrus', 'fresh']);
   });
 
   it('puts ties in a stable alphabetical order', () => {
     const rows = countCombos([
-      note('tea', 'low', 'fruity', 'sweet', 'quick'),
-      note('coffee', 'low', 'fruity', 'sweet', 'quick'),
+      note('tea', 'focused', 'low', 'fruity', 'sweet', 'quick'),
+      note('coffee', 'focused', 'low', 'fruity', 'sweet', 'quick'),
     ]);
     expect(rows.map((row) => row.answers.drink)).toEqual(['coffee', 'tea']);
   });
@@ -152,7 +158,7 @@ describe('countCombos', () => {
   it('shows a missing answer as "-", like the aroma of a note from before it was asked', () => {
     expect(countCombos([{ drink: 'tea', caffeine: null, flavor: 'floral', style: 'quick', picks: 0 }])).toEqual([
       {
-        answers: { drink: 'tea', caffeine: '-', flavor: 'floral', aroma: '-', style: 'quick' },
+        answers: { drink: 'tea', mood: '-', caffeine: '-', flavor: 'floral', aroma: '-', style: 'quick' },
         count: 1,
       },
     ]);
@@ -167,8 +173,8 @@ describe('countAnswers', () => {
   const notes = [
     TEA(),
     COFFEE(),
-    note('tea', 'low', 'floral', 'fresh', 'quick'),
-    note('either', 'low', 'fruity', 'citrus', 'either'),
+    note('tea', 'refreshed', 'low', 'floral', 'fresh', 'quick'),
+    note('either', 'calm', 'low', 'fruity', 'citrus', 'either'),
     { drink: 'tea', picks: 0 },
   ];
 
@@ -190,21 +196,34 @@ describe('countAnswers', () => {
     ]);
   });
 
+  it('counts the notes by mood, most common first, a note from before mood was asked as "-"', () => {
+    expect(countAnswers(notes, 'mood')).toEqual([
+      { answer: 'calm', count: 2 },
+      { answer: '-', count: 1 },
+      { answer: 'energized', count: 1 },
+      { answer: 'refreshed', count: 1 },
+    ]);
+  });
+
   it('gives no rows for no notes', () => {
     expect(countAnswers([], 'aroma')).toEqual([]);
   });
 });
 
 describe('formatSummary', () => {
-  it('prints the total, one line per combination, then the flavor and aroma counts', () => {
-    const notes = [TEA(), TEA(), COFFEE(), note('tea', 'none', 'floral', 'fresh', 'ritual')];
+  it('prints the total, one line per combination, then the mood, flavor and aroma counts', () => {
+    const notes = [TEA(), TEA(), COFFEE(), note('tea', 'calm', 'none', 'floral', 'fresh', 'ritual')];
     expect(formatSummary(notes, { days: 7 })).toEqual([
       'Quiz notes, last 7 days: 4 notes',
       '',
-      'count  drink / caffeine / flavor / aroma / style',
-      '    2  tea / none / floral / citrus / ritual',
-      '    1  coffee / high / earthy / toasty / quick',
-      '    1  tea / none / floral / fresh / ritual',
+      'count  drink / mood / caffeine / flavor / aroma / style',
+      '    2  tea / calm / none / floral / citrus / ritual',
+      '    1  coffee / energized / high / earthy / toasty / quick',
+      '    1  tea / calm / none / floral / fresh / ritual',
+      '',
+      'By mood',
+      '    3  calm',
+      '    1  energized',
       '',
       'By flavor',
       '    3  floral',
@@ -246,8 +265,11 @@ describe('runCli', () => {
     expect(out).toEqual([
       'Quiz notes, last 7 days: 2 notes',
       '',
-      'count  drink / caffeine / flavor / aroma / style',
-      '    2  tea / none / floral / citrus / ritual',
+      'count  drink / mood / caffeine / flavor / aroma / style',
+      '    2  tea / calm / none / floral / citrus / ritual',
+      '',
+      'By mood',
+      '    2  calm',
       '',
       'By flavor',
       '    2  floral',
@@ -261,16 +283,27 @@ describe('runCli', () => {
     const { out } = await run(['8']);
 
     expect(out[0]).toBe('Quiz notes, last 8 days: 3 notes');
-    expect(out).toContain('    1  coffee / high / earthy / toasty / quick');
+    expect(out).toContain('    1  coffee / energized / high / earthy / toasty / quick');
     expect(out).toContain('    1  toasty');
+    expect(out).toContain('    1  energized');
   });
 
-  it('counts a single no-match note, with its flavor and aroma', async () => {
+  it('counts a single no-match note, with its mood, flavor and aroma', async () => {
     const { out } = await run(['1'], fakeStore({ 'quiz-notes/2026-10-20/a.json': TEA() }));
 
     expect(out[0]).toBe('Quiz notes, last 1 day: 1 note');
-    expect(out[3]).toBe('    1  tea / none / floral / citrus / ritual');
-    expect(out.slice(4)).toEqual(['', 'By flavor', '    1  floral', '', 'By aroma', '    1  citrus']);
+    expect(out[3]).toBe('    1  tea / calm / none / floral / citrus / ritual');
+    expect(out.slice(4)).toEqual([
+      '',
+      'By mood',
+      '    1  calm',
+      '',
+      'By flavor',
+      '    1  floral',
+      '',
+      'By aroma',
+      '    1  citrus',
+    ]);
   });
 
   it.each([['0'], ['-3'], ['seven'], ['1.5'], ['7', '8']])('refuses the arguments %j', async (...args) => {

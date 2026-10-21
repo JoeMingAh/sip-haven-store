@@ -52,17 +52,17 @@ const item = (overrides = {}) => ({
   ...overrides,
 });
 
-// In lineup order. What each scores for tea + caffeine-free + floral + "Surprise me" (no
-// aroma) + a slow ritual. Caffeine-free is a filter too: a product with any caffeine is
+// In lineup order. What each scores for tea + calm + caffeine-free + floral + "Surprise me"
+// (no aroma) + a slow ritual. None of these has moods, so the mood adds nothing here. Caffeine-free is a filter too: a product with any caffeine is
 // left out, however well it fits the rest.
-//   Chamomile Meadow  none  herbal, floral   honey        loose leaf + tea bags  8 + 4 + 1 = 13  from $12.00
-//   Mint Calm         none  herbal, minty    mint, herbal tea bags               8              from $11.00
+//   Chamomile Meadow  none  herbal, floral   honey        loose leaf + tea bags  16 + 8 + 1 = 25  from $12.00
+//   Mint Calm         none  herbal, minty    mint, herbal tea bags               16             from $11.00
 //   Jasmine Pearls    low   green, floral    jasmine      loose leaf             left out (it has caffeine)
 //   Breakfast Black   high  black, malty     malty        tea bags + K-Cup       left out (it has caffeine)
 //   Dawn Roast        high  earthy, nutty    roasted      whole bean + ground    a coffee
 //   Evening Decaf     none  sweet, caramel   caramel      ground                 a coffee
 // For tea + low caffeine + floral + no aroma + a slow ritual, Jasmine Pearls scores
-// 8 + 4 + 1 = 13 (from $18.00) and Chamomile Meadow 4 + 1 = 5.
+// 16 + 8 + 1 = 25 (from $18.00) and Chamomile Meadow 8 + 1 = 9.
 const LINEUP = [
   item({
     slug: 'chamomile-meadow',
@@ -110,18 +110,19 @@ const LINEUP = [
 ];
 
 const QUESTIONS = [
-  'What are you in the mood for?',
+  'Tea or coffee today?',
+  'How do you want to feel?',
   'How much caffeine would you like?',
   'Which flavors sound best?',
   'Which aroma pulls you in?',
   'How do you like to make your cup?',
 ];
-const STYLE_QUESTION = QUESTIONS[4];
+const STYLE_QUESTION = QUESTIONS[5];
 const BLENDING = "We're still blending your perfect match";
 const PICKS = "Here's what we'd pour for you";
 
 // Answer buttons to press, in order. "Surprise me" is the aroma answer with no preference.
-const TEA_NONE_FLORAL_RITUAL = ['Tea', 'Caffeine-free', 'Floral', 'Surprise me', 'A slow ritual'];
+const TEA_NONE_FLORAL_RITUAL = ['Tea', 'Calm and unwound', 'Caffeine-free', 'Floral', 'Surprise me', 'A slow ritual'];
 
 function renderQuiz(path = '/quiz') {
   const router = createMemoryRouter(routes, { initialEntries: [path] });
@@ -198,7 +199,7 @@ describe('Quiz: the questions', () => {
     expect(stepHeading()).toHaveTextContent(QUESTIONS[1]);
   });
 
-  it('asks the five questions in order, each answered by pressing a button', () => {
+  it('asks the six questions in order, each answered by pressing a button', () => {
     renderQuiz();
     const asked = [];
     for (const label of TEA_NONE_FLORAL_RITUAL) {
@@ -208,9 +209,26 @@ describe('Quiz: the questions', () => {
     QUESTIONS.forEach((prompt, index) => expect(asked[index]).toContain(prompt));
   });
 
+  it('asks "Tea or coffee today?" first, and how they want to feel right after, with the five moods', () => {
+    renderQuiz();
+    expect(stepHeading()).toHaveTextContent('Tea or coffee today?');
+    choose('Tea');
+    expect(stepHeading()).toHaveTextContent('How do you want to feel?');
+    const group = main().getByRole('group');
+    expect(within(group).getAllByRole('button').map((button) => button.textContent)).toEqual([
+      'Calm and unwound',
+      'Focused and productive',
+      'Energized and ready',
+      'Cozy and comforted',
+      'Light and refreshed',
+    ]);
+    choose('Energized and ready');
+    expect(stepHeading()).toHaveTextContent('How much caffeine would you like?');
+  });
+
   it('offers the caffeine levels as the shop words them', () => {
     renderQuiz();
-    choose('Tea');
+    choose('Tea', 'Calm and unwound');
     const group = main().getByRole('group');
     expect(within(group).getAllByRole('button')).toHaveLength(4);
     for (const label of ['Caffeine-free', 'Low', 'Medium', 'High']) {
@@ -220,7 +238,7 @@ describe('Quiz: the questions', () => {
 
   it('offers the four flavor families', () => {
     renderQuiz();
-    choose('Tea', 'Low');
+    choose('Tea', 'Calm and unwound', 'Low');
     const group = main().getByRole('group');
     expect(within(group).getAllByRole('button')).toHaveLength(4);
     for (const label of ['Floral', 'Fruity', 'Earthy', 'Sweet and spiced']) {
@@ -230,7 +248,7 @@ describe('Quiz: the questions', () => {
 
   it('asks about aroma right after flavor, with the five aroma families and "Surprise me"', () => {
     renderQuiz();
-    choose('Tea', 'Low', 'Floral');
+    choose('Tea', 'Calm and unwound', 'Low', 'Floral');
     expect(stepHeading()).toHaveTextContent('Which aroma pulls you in?');
     const group = main().getByRole('group');
     expect(within(group).getAllByRole('button')).toHaveLength(6);
@@ -249,7 +267,7 @@ describe('Quiz: the questions', () => {
 
   it('names the formats under the brewing-style answers in the shop\'s words', () => {
     renderQuiz();
-    choose('Tea', 'Low', 'Floral', 'Surprise me');
+    choose('Tea', 'Calm and unwound', 'Low', 'Floral', 'Surprise me');
     expect(answerButton('Quick and easy')).toHaveTextContent('K-Cup, Tea bags, Ground');
     expect(answerButton('A slow ritual')).toHaveTextContent('Loose leaf, Whole bean');
     expect(answerButton('Either way is fine')).toBeInTheDocument();
@@ -288,12 +306,12 @@ describe('Quiz: the questions', () => {
     expect(stepHeading()).toHaveTextContent(QUESTIONS[1]);
 
     // The double click's second click lands on whatever replaced the button.
-    press(answerButton('Low'), { detail: 2 });
+    press(answerButton('Cozy and comforted'), { detail: 2 });
     expect(stepHeading()).toHaveTextContent(QUESTIONS[1]);
-    expect(answerButton('Low')).not.toHaveAttribute('aria-current');
+    expect(answerButton('Cozy and comforted')).not.toHaveAttribute('aria-current');
 
     // A deliberate press afterwards still works.
-    press(answerButton('Low'), { detail: 1 });
+    press(answerButton('Cozy and comforted'), { detail: 1 });
     expect(stepHeading()).toHaveTextContent(QUESTIONS[2]);
   });
 
@@ -309,12 +327,12 @@ describe('Quiz: progress', () => {
     renderQuiz();
     const dots = dotsOf(stepHeading());
     expect(dots).toHaveAttribute('aria-hidden', 'true');
-    expect(dots.children).toHaveLength(5);
+    expect(dots.children).toHaveLength(6);
   });
 
   it('says which question this is in visually hidden text, inside the heading that takes focus', () => {
     renderQuiz();
-    const number = main().getByText('Question 1 of 5');
+    const number = main().getByText('Question 1 of 6');
     expect(number).toHaveClass('sr-only');
     expect(stepHeading()).toContainElement(number);
     // The dots carry no text: the number is not repeated in the part that is hidden.
@@ -323,16 +341,28 @@ describe('Quiz: progress', () => {
 
   it('counts up as the questions are answered', () => {
     renderQuiz();
-    expect(main().getByText('Question 1 of 5')).toBeInTheDocument();
+    expect(main().getByText('Question 1 of 6')).toBeInTheDocument();
     choose('Tea');
-    expect(main().getByText('Question 2 of 5')).toBeInTheDocument();
-    expect(main().queryByText('Question 1 of 5')).not.toBeInTheDocument();
+    expect(main().getByText('Question 2 of 6')).toBeInTheDocument();
+    expect(main().queryByText('Question 1 of 6')).not.toBeInTheDocument();
+    choose('Calm and unwound');
+    expect(main().getByText('Question 3 of 6')).toBeInTheDocument();
     choose('Low');
-    expect(main().getByText('Question 3 of 5')).toBeInTheDocument();
+    expect(main().getByText('Question 4 of 6')).toBeInTheDocument();
     choose('Floral');
-    expect(main().getByText('Question 4 of 5')).toBeInTheDocument();
+    expect(main().getByText('Question 5 of 6')).toBeInTheDocument();
     choose('Surprise me');
-    expect(main().getByText('Question 5 of 5')).toBeInTheDocument();
+    expect(main().getByText('Question 6 of 6')).toBeInTheDocument();
+  });
+
+  it('shows 6 steps: six dots and "of 6" on every question', () => {
+    renderQuiz();
+    for (const label of TEA_NONE_FLORAL_RITUAL) {
+      expect(dotsOf(stepHeading()).children).toHaveLength(6);
+      expect(stepHeading()).toHaveTextContent(/Question \d of 6/);
+      choose(label);
+    }
+    expect(TEA_NONE_FLORAL_RITUAL).toHaveLength(6);
   });
 
   it('draws finished, current and coming dots differently', () => {
@@ -370,7 +400,7 @@ describe('Quiz: progress', () => {
     shop.products = LINEUP;
     renderQuiz();
     choose(...TEA_NONE_FLORAL_RITUAL);
-    expect(main().queryByText(/Question \d of 5/)).not.toBeInTheDocument();
+    expect(main().queryByText(/Question \d of 6/)).not.toBeInTheDocument();
     // Nothing above the heading: on a question the dots are there.
     expect(stepHeading().previousElementSibling).toBeNull();
   });
@@ -392,20 +422,26 @@ describe('Quiz: moving between questions', () => {
     choose('Tea');
     expect(stepHeading()).toHaveTextContent(QUESTIONS[1]);
     expect(stepHeading()).toHaveFocus();
-    choose('Low');
+    choose('Calm and unwound');
     expect(stepHeading()).toHaveTextContent(QUESTIONS[2]);
     expect(stepHeading()).toHaveFocus();
-    choose('Floral');
+    choose('Low');
     expect(stepHeading()).toHaveTextContent(QUESTIONS[3]);
     expect(stepHeading()).toHaveFocus();
-    choose('Surprise me');
+    choose('Floral');
     expect(stepHeading()).toHaveTextContent(QUESTIONS[4]);
+    expect(stepHeading()).toHaveFocus();
+    choose('Surprise me');
+    expect(stepHeading()).toHaveTextContent(QUESTIONS[5]);
     expect(stepHeading()).toHaveFocus();
   });
 
   it('moves focus to the heading of the question it goes back to', () => {
     renderQuiz();
-    choose('Tea', 'Low');
+    choose('Tea', 'Calm and unwound', 'Low');
+    press(backButton());
+    expect(stepHeading()).toHaveTextContent(QUESTIONS[2]);
+    expect(stepHeading()).toHaveFocus();
     press(backButton());
     expect(stepHeading()).toHaveTextContent(QUESTIONS[1]);
     expect(stepHeading()).toHaveFocus();
@@ -429,14 +465,19 @@ describe('Quiz: moving between questions', () => {
 
   it('goes back one question and shows the answer that was given', () => {
     renderQuiz();
-    choose('Tea', 'Low');
-    expect(stepHeading()).toHaveTextContent(QUESTIONS[2]);
+    choose('Tea', 'Calm and unwound', 'Low');
+    expect(stepHeading()).toHaveTextContent(QUESTIONS[3]);
 
     press(backButton());
-    expect(stepHeading()).toHaveTextContent(QUESTIONS[1]);
+    expect(stepHeading()).toHaveTextContent(QUESTIONS[2]);
     expect(answerButton('Low')).toHaveAttribute('aria-current', 'true');
     expect(answerButton('Caffeine-free')).not.toHaveAttribute('aria-current');
     expect(answerButton('Medium')).not.toHaveAttribute('aria-current');
+
+    press(backButton());
+    expect(stepHeading()).toHaveTextContent(QUESTIONS[1]);
+    expect(answerButton('Calm and unwound')).toHaveAttribute('aria-current', 'true');
+    expect(answerButton('Cozy and comforted')).not.toHaveAttribute('aria-current');
 
     press(backButton());
     expect(stepHeading()).toHaveTextContent(QUESTIONS[0]);
@@ -445,7 +486,7 @@ describe('Quiz: moving between questions', () => {
 
   it('marks the answer that was given with a tick as well as a color', () => {
     renderQuiz();
-    choose('Tea', 'Low');
+    choose('Tea', 'Calm and unwound', 'Low');
     press(backButton());
     expect(answerButton('Low').querySelector('svg')).not.toBeNull();
     expect(answerButton('Low').querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
@@ -465,26 +506,30 @@ describe('Quiz: moving between questions', () => {
 
   it('lets an answer be changed, and keeps the others', () => {
     renderQuiz();
-    choose('Tea', 'Low');
+    choose('Tea', 'Calm and unwound', 'Low');
     press(backButton());
     choose('Medium');
-    expect(stepHeading()).toHaveTextContent(QUESTIONS[2]);
+    expect(stepHeading()).toHaveTextContent(QUESTIONS[3]);
     press(backButton());
     expect(answerButton('Medium')).toHaveAttribute('aria-current', 'true');
     expect(answerButton('Low')).not.toHaveAttribute('aria-current');
+    press(backButton());
+    expect(answerButton('Calm and unwound')).toHaveAttribute('aria-current', 'true');
     press(backButton());
     expect(answerButton('Tea')).toHaveAttribute('aria-current', 'true');
   });
 
   it('starts over from a later question, with nothing remembered', () => {
     renderQuiz();
-    choose('Tea', 'Low');
+    choose('Tea', 'Calm and unwound', 'Low');
     press(startOverButton());
     expect(stepHeading()).toHaveTextContent(QUESTIONS[0]);
-    expect(main().getByText('Question 1 of 5')).toBeInTheDocument();
+    expect(main().getByText('Question 1 of 6')).toBeInTheDocument();
     expect(stepHeading()).toHaveFocus();
     expect(answerButton('Tea')).not.toHaveAttribute('aria-current');
     choose('Tea');
+    expect(answerButton('Calm and unwound')).not.toHaveAttribute('aria-current');
+    choose('Calm and unwound');
     expect(answerButton('Low')).not.toHaveAttribute('aria-current');
     expect(main().queryByRole('button', { name: 'Start over' })).toBeInTheDocument();
   });
@@ -543,20 +588,20 @@ describe('Quiz: the result, store open', () => {
 
   it('follows the answers: a coffee drinker is shown coffee only', () => {
     renderQuiz();
-    choose('Coffee', 'High', 'Earthy', 'Surprise me', 'A slow ritual');
+    choose('Coffee', 'Calm and unwound', 'High', 'Earthy', 'Surprise me', 'A slow ritual');
     expect(names()).toEqual(['Dawn Roast']);
   });
 
   it('shows teas and coffees together for either', () => {
     renderQuiz();
-    choose('Either one', 'Caffeine-free', 'Sweet and spiced', 'Surprise me', 'Either way is fine');
+    choose('Either one', 'Calm and unwound', 'Caffeine-free', 'Sweet and spiced', 'Surprise me', 'Either way is fine');
     expect(names()).toEqual(['Evening Decaf', 'Chamomile Meadow', 'Mint Calm']);
   });
 
   it('lets the aroma decide between products that tie on everything else', () => {
     // Chamomile Meadow and Mint Calm are both caffeine-free teas with no fruity tag.
     renderQuiz();
-    choose('Tea', 'Caffeine-free', 'Fruity', 'Surprise me', 'Either way is fine');
+    choose('Tea', 'Calm and unwound', 'Caffeine-free', 'Fruity', 'Surprise me', 'Either way is fine');
     expect(names()).toEqual(['Chamomile Meadow', 'Mint Calm']);
 
     press(backButton()); // style
@@ -570,10 +615,51 @@ describe('Quiz: the result, store open', () => {
     expect(names()).toEqual(['Chamomile Meadow', 'Mint Calm']);
   });
 
+  describe('with moods on the lineup', () => {
+    // The same lineup, tagged with moods. Breakfast Black is the most energizing, but it
+    // has caffeine.
+    const MOODS = {
+      'chamomile-meadow': ['calm', 'cozy'],
+      'mint-calm': ['refreshed', 'energized'],
+      'breakfast-black': ['energized', 'focused'],
+      'dawn-roast': ['energized'],
+    };
+    beforeEach(() => {
+      shop.products = LINEUP.map((product) => ({ ...product, moods: MOODS[product.slug] ?? [] }));
+    });
+
+    it('lets the mood decide between products that tie on taste', () => {
+      // Chamomile Meadow and Mint Calm are both caffeine-free teas with no fruity tag.
+      renderQuiz();
+      choose('Tea', 'Cozy and comforted', 'Caffeine-free', 'Fruity', 'Surprise me', 'Either way is fine');
+      expect(names()).toEqual(['Chamomile Meadow', 'Mint Calm']);
+
+      press(startOverButton());
+      choose('Tea', 'Light and refreshed', 'Caffeine-free', 'Fruity', 'Surprise me', 'Either way is fine');
+      expect(names()).toEqual(['Mint Calm', 'Chamomile Meadow']);
+    });
+
+    it('shows only caffeine-free products to an energized shopper who chose caffeine-free', () => {
+      renderQuiz();
+      choose('Either one', 'Energized and ready', 'Caffeine-free', 'Earthy', 'Surprise me', 'Either way is fine');
+      // Breakfast Black and Dawn Roast are energizing (and Dawn Roast is earthy), but have caffeine.
+      expect(names()).toEqual(['Mint Calm', 'Chamomile Meadow', 'Evening Decaf']);
+      expect(main().queryByText('Breakfast Black')).not.toBeInTheDocument();
+      expect(main().queryByText('Dawn Roast')).not.toBeInTheDocument();
+    });
+
+    it('does not let the mood outweigh the caffeine choice', () => {
+      // Calm fits Chamomile Meadow, but Low caffeine fits Jasmine Pearls, which comes first.
+      renderQuiz();
+      choose('Tea', 'Calm and unwound', 'Low', 'Fruity', 'Surprise me', 'Either way is fine');
+      expect(names()).toEqual(['Jasmine Pearls', 'Chamomile Meadow']);
+    });
+  });
+
   it('puts the product whose tags and aromas both fit first', () => {
     renderQuiz();
     // Floral (tag) and jasmine (aroma) both fit Jasmine Pearls; Chamomile Meadow is floral only.
-    choose('Tea', 'Medium', 'Floral', 'Floral', 'Either way is fine');
+    choose('Tea', 'Calm and unwound', 'Medium', 'Floral', 'Floral', 'Either way is fine');
     expect(names()).toEqual(['Jasmine Pearls', 'Chamomile Meadow']);
   });
 
@@ -614,19 +700,19 @@ describe('Quiz: the result, store open', () => {
 
   it('shows that same product to someone who chose Low caffeine', () => {
     renderQuiz();
-    choose('Tea', 'Low', 'Floral', 'Surprise me', 'A slow ritual');
+    choose('Tea', 'Calm and unwound', 'Low', 'Floral', 'Surprise me', 'A slow ritual');
     expect(names()).toEqual(['Jasmine Pearls', 'Chamomile Meadow']);
   });
 
   it('stops showing it when the shopper goes back and changes Low to Caffeine-free', () => {
     renderQuiz();
-    choose('Tea', 'Low', 'Floral', 'Surprise me', 'A slow ritual');
+    choose('Tea', 'Calm and unwound', 'Low', 'Floral', 'Surprise me', 'A slow ritual');
     expect(names()).toContain('Jasmine Pearls');
 
+    press(backButton()); // question 6
     press(backButton()); // question 5
     press(backButton()); // question 4
-    press(backButton()); // question 3
-    press(backButton()); // question 2
+    press(backButton()); // question 3, caffeine
     choose('Caffeine-free', 'Floral', 'Surprise me', 'A slow ritual');
     expect(names()).toEqual(['Chamomile Meadow', 'Mint Calm']);
   });
@@ -659,11 +745,11 @@ describe('Quiz: the result, store open', () => {
     choose(...TEA_NONE_FLORAL_RITUAL);
     expect(names()).toEqual(['Chamomile Meadow', 'Mint Calm']);
 
+    press(backButton()); // question 6
     press(backButton()); // question 5
     press(backButton()); // question 4
-    press(backButton()); // question 3
-    press(backButton()); // question 2
-    choose('High'); // question 3: Floral is still marked from before
+    press(backButton()); // question 3, caffeine
+    choose('High'); // question 4: Floral is still marked from before
     expect(answerButton('Floral')).toHaveAttribute('aria-current', 'true');
     choose('Floral');
     expect(answerButton('Surprise me')).toHaveAttribute('aria-current', 'true');
@@ -681,7 +767,7 @@ describe('Quiz: the result, store open', () => {
     expect(stepHeading()).toHaveTextContent(QUESTIONS[0]);
     expect(stepHeading()).toHaveFocus();
     expect(main().queryByText('Chamomile Meadow')).not.toBeInTheDocument();
-    expect(main().getByText('Question 1 of 5')).toBeInTheDocument();
+    expect(main().getByText('Question 1 of 6')).toBeInTheDocument();
     expect(answerButton('Tea')).not.toHaveAttribute('aria-current');
   });
 
@@ -689,7 +775,7 @@ describe('Quiz: the result, store open', () => {
     renderQuiz();
     choose(...TEA_NONE_FLORAL_RITUAL);
     press(startOverButton());
-    choose('Coffee', 'High', 'Earthy', 'Toasty and smoky', 'A slow ritual');
+    choose('Coffee', 'Calm and unwound', 'High', 'Earthy', 'Toasty and smoky', 'A slow ritual');
     expect(names()).toEqual(['Dawn Roast']);
   });
 });
@@ -802,7 +888,7 @@ describe('Quiz: store closed', () => {
   it('shows no price on any question either', () => {
     renderQuiz();
     expect(screen.getByRole('main')).not.toHaveTextContent('$');
-    choose('Tea', 'Low', 'Floral');
+    choose('Tea', 'Calm and unwound', 'Low', 'Floral');
     expect(screen.getByRole('main')).not.toHaveTextContent('$');
   });
 
@@ -842,12 +928,12 @@ describe('Quiz: the signup on the result', () => {
     ['Either one', 'either'],
   ])('sends the answers for %s, with source quiz, when the store is closed', async (label, drink) => {
     renderQuiz();
-    choose(label, 'Low', 'Floral', 'Bright and citrusy', 'A slow ritual');
+    choose(label, 'Calm and unwound', 'Low', 'Floral', 'Bright and citrusy', 'A slow ritual');
     await signUp();
     expect(postsTo('/api/subscribe')).toHaveLength(1);
     expect(posted()).toEqual({
       email: 'sam@example.com',
-      answers: { drink, caffeine: 'low', flavor: 'floral', aroma: 'citrus', style: 'ritual' },
+      answers: { drink, mood: 'calm', caffeine: 'low', flavor: 'floral', aroma: 'citrus', style: 'ritual' },
       source: 'quiz',
     });
   });
@@ -861,7 +947,7 @@ describe('Quiz: the signup on the result', () => {
     await signUp();
     expect(posted()).toEqual({
       email: 'sam@example.com',
-      answers: { drink: 'tea', caffeine: 'none', flavor: 'floral', aroma: 'either', style: 'ritual' },
+      answers: { drink: 'tea', mood: 'calm', caffeine: 'none', flavor: 'floral', aroma: 'either', style: 'ritual' },
       topMatch: 'chamomile-meadow',
       matches: ['chamomile-meadow', 'mint-calm'],
       source: 'quiz',
@@ -872,7 +958,7 @@ describe('Quiz: the signup on the result', () => {
     shop.open = true;
     shop.products = LINEUP;
     renderQuiz();
-    choose('Either one', 'Caffeine-free', 'Sweet and spiced', 'Sweet', 'Either way is fine');
+    choose('Either one', 'Calm and unwound', 'Caffeine-free', 'Sweet and spiced', 'Sweet', 'Either way is fine');
     expect(names()).toEqual(['Evening Decaf', 'Chamomile Meadow', 'Mint Calm']);
     await signUp();
     expect(posted()).toMatchObject({
@@ -885,18 +971,25 @@ describe('Quiz: the signup on the result', () => {
     shop.open = true;
     shop.products = [];
     renderQuiz();
-    choose('Coffee', 'High', 'Earthy', 'Toasty and smoky', 'A slow ritual');
+    choose('Coffee', 'Calm and unwound', 'High', 'Earthy', 'Toasty and smoky', 'A slow ritual');
     await signUp();
     expect(posted()).not.toHaveProperty('topMatch');
     expect(posted()).not.toHaveProperty('matches');
     expect(posted().answers).toMatchObject({ drink: 'coffee', flavor: 'earthy', aroma: 'toasty' });
   });
 
+  it('sends the mood answer', async () => {
+    renderQuiz();
+    choose('Coffee', 'Focused and productive', 'High', 'Earthy', 'Toasty and smoky', 'A slow ritual');
+    await signUp();
+    expect(posted().answers).toMatchObject({ drink: 'coffee', mood: 'focused' });
+  });
+
   it('follows the answer that was changed, not the first one given', async () => {
     renderQuiz();
-    choose('Tea', 'Low', 'Floral', 'Surprise me', 'A slow ritual');
-    for (let step = 0; step < 5; step += 1) press(backButton());
-    choose('Coffee', 'Low', 'Floral', 'Surprise me', 'A slow ritual');
+    choose('Tea', 'Calm and unwound', 'Low', 'Floral', 'Surprise me', 'A slow ritual');
+    for (let step = 0; step < QUESTIONS.length; step += 1) press(backButton());
+    choose('Coffee', 'Calm and unwound', 'Low', 'Floral', 'Surprise me', 'A slow ritual');
     await signUp();
     expect(posted().answers.drink).toBe('coffee');
   });
@@ -910,7 +1003,7 @@ describe('Quiz: notes on answers with too few matches', () => {
     renderQuiz();
     choose(...TEA_NONE_FLORAL_RITUAL);
     expect(notes()).toEqual([
-      { drink: 'tea', caffeine: 'none', flavor: 'floral', aroma: 'either', style: 'ritual', picks: 0 },
+      { drink: 'tea', mood: 'calm', caffeine: 'none', flavor: 'floral', aroma: 'either', style: 'ritual', picks: 0 },
     ]);
   });
 
@@ -918,10 +1011,16 @@ describe('Quiz: notes on answers with too few matches', () => {
     shop.open = true;
     shop.products = [];
     renderQuiz();
-    choose('Coffee', 'High', 'Earthy', 'Toasty and smoky', 'A slow ritual');
+    choose('Coffee', 'Calm and unwound', 'High', 'Earthy', 'Toasty and smoky', 'A slow ritual');
     expect(notes()).toEqual([
-      { drink: 'coffee', caffeine: 'high', flavor: 'earthy', aroma: 'toasty', style: 'ritual', picks: 0 },
+      { drink: 'coffee', mood: 'calm', caffeine: 'high', flavor: 'earthy', aroma: 'toasty', style: 'ritual', picks: 0 },
     ]);
+  });
+
+  it('notes the mood that went unmet', () => {
+    renderQuiz();
+    choose('Tea', 'Light and refreshed', 'Caffeine-free', 'Fruity', 'Surprise me', 'Either way is fine');
+    expect(notes()).toEqual([expect.objectContaining({ drink: 'tea', mood: 'refreshed', picks: 0 })]);
   });
 
   it('notes fewer picks than the quiz shows', () => {
@@ -930,7 +1029,7 @@ describe('Quiz: notes on answers with too few matches', () => {
     renderQuiz();
     choose(...TEA_NONE_FLORAL_RITUAL); // two picks
     expect(notes()).toEqual([
-      { drink: 'tea', caffeine: 'none', flavor: 'floral', aroma: 'either', style: 'ritual', picks: 2 },
+      { drink: 'tea', mood: 'calm', caffeine: 'none', flavor: 'floral', aroma: 'either', style: 'ritual', picks: 2 },
     ]);
   });
 
@@ -938,14 +1037,14 @@ describe('Quiz: notes on answers with too few matches', () => {
     shop.open = true;
     shop.products = LINEUP;
     renderQuiz();
-    choose('Either one', 'Caffeine-free', 'Floral', 'Surprise me', 'A slow ritual');
+    choose('Either one', 'Calm and unwound', 'Caffeine-free', 'Floral', 'Surprise me', 'A slow ritual');
     expect(names()).toHaveLength(3);
     expect(notes()).toEqual([]);
   });
 
   it('notes nothing before the last question is answered', () => {
     renderQuiz();
-    choose('Tea', 'Low', 'Floral', 'Bright and citrusy');
+    choose('Tea', 'Calm and unwound', 'Low', 'Floral', 'Bright and citrusy');
     expect(notes()).toEqual([]);
   });
 
@@ -957,7 +1056,7 @@ describe('Quiz: notes on answers with too few matches', () => {
     expect(init.method).toBe('POST');
     expect(init.keepalive).toBe(true);
     expect(Object.keys(JSON.parse(init.body)).sort()).toEqual(
-      ['aroma', 'caffeine', 'drink', 'flavor', 'picks', 'style'],
+      ['aroma', 'caffeine', 'drink', 'flavor', 'mood', 'picks', 'style'],
     );
   });
 

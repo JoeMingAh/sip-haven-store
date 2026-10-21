@@ -254,7 +254,14 @@ describe('interest', () => {
 // The quiz sends its answers, its first pick and source 'quiz'. Every value is checked
 // against the quiz's own answer ids (lib/quiz.js) and the lineup's slugs.
 describe('quiz answers', () => {
-  const ANSWERS = { drink: 'tea', caffeine: 'none', flavor: 'floral', aroma: 'fresh', style: 'ritual' };
+  const ANSWERS = {
+    drink: 'tea',
+    mood: 'calm',
+    caffeine: 'none',
+    flavor: 'floral',
+    aroma: 'fresh',
+    style: 'ritual',
+  };
 
   it('saves the answers, the top match and the source as contact properties', async () => {
     const res = await post({
@@ -273,11 +280,33 @@ describe('quiz answers', () => {
     expect(createdContact().properties).toEqual({
       interest: 'tea',
       signup_source: 'quiz',
+      quiz_mood: 'calm',
       quiz_caffeine: 'none',
       quiz_flavor: 'floral',
       quiz_aroma: 'fresh',
       quiz_style: 'ritual',
     });
+  });
+
+  it('saves the mood answer as quiz_mood', async () => {
+    const res = await post({
+      email: 'jane@example.com',
+      answers: { drink: 'tea', mood: 'refreshed' },
+      source: 'quiz',
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(createdContact().properties).toEqual({
+      interest: 'tea',
+      signup_source: 'quiz',
+      quiz_mood: 'refreshed',
+    });
+  });
+
+  it.each(['calm', 'focused', 'energized', 'cozy', 'refreshed'])('saves the mood %s', async (mood) => {
+    await post({ email: 'jane@example.com', answers: { ...ANSWERS, mood }, source: 'quiz' });
+
+    expect(createdContact().properties.quiz_mood).toBe(mood);
   });
 
   it('saves both the flavor and the aroma answer', async () => {
@@ -314,6 +343,7 @@ describe('quiz answers', () => {
         caffeine: 'extreme',
         flavor: ['floral'],
         aroma: 'garlic',
+        mood: 'sleepy',
         style: 'quick',
         extra: 'x',
       },
@@ -357,7 +387,14 @@ describe('an address that is already on the list: properties', () => {
 
     const res = await post({
       email: 'jane@example.com',
-      answers: { drink: 'coffee', caffeine: 'high', flavor: 'earthy', aroma: 'toasty', style: 'quick' },
+      answers: {
+        drink: 'coffee',
+        mood: 'focused',
+        caffeine: 'high',
+        flavor: 'earthy',
+        aroma: 'toasty',
+        style: 'quick',
+      },
       source: 'quiz',
     });
 
@@ -369,6 +406,7 @@ describe('an address that is already on the list: properties', () => {
       properties: {
         interest: 'coffee',
         signup_source: 'quiz',
+        quiz_mood: 'focused',
         quiz_caffeine: 'high',
         quiz_flavor: 'earthy',
         quiz_aroma: 'toasty',

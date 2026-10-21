@@ -72,8 +72,8 @@ async function updateSegments(resend, email, interest) {
 
 /**
  * POST /api/subscribe
- *   { email, interest?, answers?: { drink, caffeine, flavor, aroma, style }, topMatch?,
- *     matches?: [slug, ...], source? }
+ *   { email, interest?, answers?: { drink, mood, caffeine, flavor, aroma, style },
+ *     topMatch?, matches?: [slug, ...], source? }
  *
  * Saves the visitor's address to the Resend audience, with what they told us as
  * contact properties (see lib/signup.js), and puts it in the tea and/or coffee segment.

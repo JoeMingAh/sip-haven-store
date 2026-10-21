@@ -20,7 +20,7 @@ const OPEN_SUCCESS_MESSAGE = "You're on the list. We'll keep you posted on new t
  * the rest of the page, instead of a different bubble per browser.
  *
  * `interest` ('tea', 'coffee' or 'both') is sent along when the caller knows it. The
- * quiz also passes its `answers` ({ drink, caffeine, flavor, aroma, style }), the slugs
+ * quiz also passes its `answers` ({ drink, mood, caffeine, flavor, aroma, style }), the slugs
  * of its picks, best first, as `matches` and the first of them as `topMatch` (when it
  * has any), and `source` 'quiz'. Every other form is
  * `source` 'site', the default. The server checks all of these and drops what it does

@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { validateLineup } from '../lib/catalog.js';
 import { DEFAULT_TAX_CODE } from '../lib/store-config.js';
-import { aromaNotes, runCli, syncLineup } from './load-lineup.js';
+import { aromaNotes, moodNotes, runCli, syncLineup } from './load-lineup.js';
 
 // None of these tests can reach Stripe: syncLineup is handed a pretend client
 // (fakeStripe below) and runCli is handed one through `createStripe`.
@@ -800,6 +800,54 @@ describe('aromaNotes', () => {
   });
 });
 
+// ---- moodNotes -------------------------------------------------------------
+
+describe('moodNotes', () => {
+  const NO_MOOD =
+    'Note: Jasmine Dream has no mood the quiz looks for, so the mood question will not find ' +
+    'it. Fill in its moods column (LINEUP-GUIDE.md lists the words).';
+
+  it('has nothing to say when every product has moods the quiz knows', () => {
+    const lineup = lineupOf(tea({ moods: ['calm', 'Cozy '] }), coffee({ moods: ['energized'] }));
+    expect(moodNotes(lineup)).toEqual([]);
+  });
+
+  it.each([
+    ['no moods field', undefined],
+    ['an empty list', []],
+    ['only blank words', ['', '  ']],
+  ])('notes a product with %s', (_case, moods) => {
+    expect(moodNotes(lineupOf(tea({ moods })))).toEqual([NO_MOOD]);
+  });
+
+  it('notes mood words the quiz does not look for, and whether any it does are left', () => {
+    expect(moodNotes(lineupOf(tea({ moods: ['relaxed', 'calm'] })))).toEqual([
+      "Note: the quiz does not look for these moods of Jasmine Dream: 'relaxed'. " +
+        'Check the spelling if they should count.',
+    ]);
+    expect(moodNotes(lineupOf(tea({ moods: ['energised'] })))).toEqual([
+      NO_MOOD,
+      "Note: the quiz does not look for these moods of Jasmine Dream: 'energised'. " +
+        'Check the spelling if they should count.',
+    ]);
+  });
+
+  it('does not count an aroma as a mood, or a mood as an aroma', () => {
+    const lineup = lineupOf(tea({ aromas: ['calm'], moods: ['jasmine'] }));
+    expect(moodNotes(lineup)).toEqual([NO_MOOD, expect.stringContaining("moods of Jasmine Dream: 'jasmine'")]);
+    expect(aromaNotes(lineup)).toEqual([
+      expect.stringContaining('has no aroma'),
+      expect.stringContaining("aromas of Jasmine Dream: 'calm'"),
+    ]);
+  });
+
+  it('copes with a lineup that is not one, leaving that to validation', () => {
+    expect(moodNotes(null)).toEqual([]);
+    expect(moodNotes({ products: 'nope' })).toEqual([]);
+    expect(moodNotes({ products: [null, { slug: 'no-name' }] })).toEqual([]);
+  });
+});
+
 // ---- runCli ----------------------------------------------------------------
 
 describe('runCli', () => {
@@ -851,19 +899,37 @@ describe('runCli', () => {
       expect(log.at(-1)).toBe('Wrote src/data/lineup.json with the Stripe price ids.');
     });
 
-    it('prints a note for a product the aroma question cannot find, and still loads it', async () => {
-      const { code, log, written } = await run([], { lineup: lineupOf(tea(), coffee({ aromas: ['cocoa'] })) });
+    it('prints a note for a product the aroma or mood question cannot find, and still loads it', async () => {
+      const { code, log, written } = await run([], {
+        lineup: lineupOf(tea(), coffee({ aromas: ['cocoa'], moods: ['energized'] })),
+      });
 
       expect(code).toBe(0);
       expect(log.filter((line) => line.startsWith('Note: '))).toEqual([
         expect.stringContaining('Jasmine Dream has no aroma the quiz looks for'),
+        expect.stringContaining('Jasmine Dream has no mood the quiz looks for'),
       ]);
       expect(JSON.parse(written[0]).products).toHaveLength(2);
+    });
+
+    it('loads a product with blank moods and blank aromas, and gives it price ids', async () => {
+      const { code, error, written } = await run([], { lineup: lineupOf(tea({ moods: [], aromas: [] })) });
+
+      expect(code).toBe(0);
+      expect(error).toEqual([]);
+      const [saved] = JSON.parse(written[0]).products;
+      expect(saved).toMatchObject({ slug: 'jasmine-dream', moods: [], aromas: [] });
+      expect(idsOf(saved)).toEqual(['price_new_1', 'price_new_2']);
     });
 
     it('keeps the aromas in lineup.json when it writes the price ids back', async () => {
       const { written } = await run([], { lineup: lineupOf(tea({ aromas: ['jasmine', 'honey'] })) });
       expect(JSON.parse(written[0]).products[0].aromas).toEqual(['jasmine', 'honey']);
+    });
+
+    it('keeps the moods in lineup.json when it writes the price ids back', async () => {
+      const { written } = await run([], { lineup: lineupOf(tea({ moods: ['calm', 'cozy'] })) });
+      expect(JSON.parse(written[0]).products[0].moods).toEqual(['calm', 'cozy']);
     });
 
     it('says it is using a test key, and never prints the key', async () => {

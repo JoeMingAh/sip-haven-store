@@ -98,7 +98,7 @@ function Answer({ answer, chosen, onChoose }) {
 }
 
 // A question, in its panel: the dots, the heading and its answers. The visually hidden
-// "Question N of 5" is inside the heading, which is what takes focus, so it is read out
+// "Question N of 6" (one per question in lib/quiz.js) is inside the heading, which is what takes focus, so it is read out
 // with the question each time the quiz moves on.
 function Question({ question, step, chosenId, grabFocus, onChoose }) {
   const headingId = useId();
