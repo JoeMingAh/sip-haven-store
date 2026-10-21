@@ -10,9 +10,11 @@
     "preview": "vite preview",
     "test": "vitest run",
     "lineup:csv": "node scripts/csv-to-lineup.js",
-    "load-lineup": "node --env-file=.env.local scripts/load-lineup.js"
+    "load-lineup": "node --env-file=.env.local scripts/load-lineup.js",
+    "quiz-notes:summary": "node --env-file=.env.local scripts/quiz-notes-summary.js"
   },
   "dependencies": {
+    "@vercel/blob": "^2.8.2",
     "lucide-react": "^1.14.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",

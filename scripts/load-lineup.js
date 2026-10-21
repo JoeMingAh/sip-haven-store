@@ -10,10 +10,16 @@
 // cannot be edited, so a new amount gets a new price and the old one is turned off.
 // Nothing is deleted. Nothing is sent to Stripe unless the lineup passes validateLineup
 // and none of its products is still a sample row from lineup-template.csv.
+//
+// It also notes any product the quiz's aroma question cannot find (its `aromas`, the
+// aromas column of the sheet, has none of the words the quiz looks for) and any aroma
+// word the quiz does not know, so a blank or misspelt aromas cell is noticed. These are
+// notes only: Stripe does not use aromas, and the product is loaded either way.
 import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import Stripe from 'stripe';
 import { validateLineup } from '../lib/catalog.js';
+import { QUIZ_AROMAS } from '../lib/quiz.js';
 import { DEFAULT_TAX_CODE } from '../lib/store-config.js';
 
 const LINEUP_URL = new URL('../src/data/lineup.json', import.meta.url);
@@ -267,6 +273,39 @@ export async function syncLineup(lineup, stripe, { live = false, apiKey } = {}) 
   return { lineup: result, report };
 }
 
+/**
+ * Notes, in plain English, on the products' aromas: one line for each product the quiz's
+ * aroma question can never find, and one for each product with aroma words the quiz
+ * does not look for (a typo, say). [] when every product has a known aroma and no
+ * unknown ones. Words are compared without regard to case or spacing, as the quiz does.
+ */
+export function aromaNotes(lineup) {
+  const notes = [];
+  const products = Array.isArray(lineup?.products) ? lineup.products : [];
+  for (const product of products) {
+    // A lineup that fails validation is reported by syncLineup; there is nothing to note.
+    if (typeof product?.name !== 'string') continue;
+    const aromas = (Array.isArray(product.aromas) ? product.aromas : [])
+      .filter((aroma) => typeof aroma === 'string' && aroma.trim() !== '')
+      .map((aroma) => aroma.trim());
+    const isKnown = (aroma) => QUIZ_AROMAS.includes(aroma.toLowerCase());
+    const unknown = aromas.filter((aroma) => !isKnown(aroma));
+    if (!aromas.some(isKnown)) {
+      notes.push(
+        `Note: ${product.name} has no aroma the quiz looks for, so the aroma question will not ` +
+          'find it. Fill in its aromas column (LINEUP-GUIDE.md lists the words).',
+      );
+    }
+    if (unknown.length > 0) {
+      notes.push(
+        `Note: the quiz does not look for these aromas of ${product.name}: ` +
+          `${unknown.map((aroma) => `'${aroma}'`).join(', ')}. Check the spelling if they should count.`,
+      );
+    }
+  }
+  return notes;
+}
+
 const USAGE = 'Usage: npm run load-lineup   (to use a live key: npm run load-lineup -- --live)';
 
 /**
@@ -338,6 +377,7 @@ export async function runCli(args, io = {}) {
       ? 'Using a LIVE Stripe key: this changes the real shop.'
       : 'Using a Stripe test key.',
   );
+  for (const note of aromaNotes(lineup)) log(note);
 
   let result;
   try {

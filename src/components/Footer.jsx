@@ -1,8 +1,11 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { footerLinks } from './navLinks.js';
 import SignupForm from './SignupForm.jsx';
 
 const YEAR = new Date().getFullYear();
+
+// The shop pages whose drink the footer signup can pass on as the shopper's interest.
+const INTEREST_BY_PATH = { '/tea': 'tea', '/coffee': 'coffee' };
 
 function FooterColumn({ title, links }) {
   return (
@@ -26,6 +29,7 @@ function FooterColumn({ title, links }) {
 
 export default function Footer() {
   const { shop, about } = footerLinks();
+  const { pathname } = useLocation();
 
   return (
     <footer className="mt-20 border-t border-wood bg-sage-tint text-ink">
@@ -41,7 +45,7 @@ export default function Footer() {
             <p className="mb-4 mt-1 text-pretty text-sm leading-relaxed">
               Leave your email and we'll let you know when something new is brewing.
             </p>
-            <SignupForm />
+            <SignupForm interest={INTEREST_BY_PATH[pathname]} />
           </div>
         </div>
 

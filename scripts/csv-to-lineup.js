@@ -5,7 +5,8 @@
 // The spreadsheet is lineup-template.csv, filled in. Each row is one variant (a
 // format and size with a price). Rows that share a slug make one product, and
 // that product's own columns (name, description and so on) are read from the
-// first of its rows. Lists are written with | between items ('floral|honey') and
+// first of its rows. Lists (flavor_notes, tags, aromas, images) are written with |
+// between items ('floral|honey') and
 // prices in dollars ('12.50'). Stripe price ids already in lineup.json are kept,
 // and nothing is written unless the result passes validateLineup.
 import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
@@ -33,6 +34,7 @@ const COLUMNS = [
   'amount',
   'steep_time',
   'tags',
+  'aromas',
   'featured',
   'images',
   'format',
@@ -149,6 +151,7 @@ function toProduct(row) {
     origin: text(row, 'origin'),
     brew_guide: Object.keys(brewGuide).length > 0 ? brewGuide : undefined,
     tags: toList(text(row, 'tags')),
+    aromas: toList(text(row, 'aromas')),
     featured: toFeatured(text(row, 'featured')),
     images: toList(text(row, 'images')),
     variants: [],

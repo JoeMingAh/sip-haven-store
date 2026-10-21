@@ -7,7 +7,8 @@ import { cupWithSteam } from '../assets/placeholders/index.js';
 // What a shop page shows in place of products while the store is closed or the
 // lineup is empty: no prices, nothing to buy, just a way to hear when it opens.
 // It is a section with an h2, so a page that shows only this still needs its own h1.
-export default function ComingSoon() {
+// `interest` ('tea' or 'coffee') goes to the signup when the page knows it.
+export default function ComingSoon({ interest }) {
   const headingId = useId();
 
   return (
@@ -26,7 +27,7 @@ export default function ComingSoon() {
         Leave your email and we'll tell you as soon as it's ready to pour.
       </p>
       <div className="mx-auto mt-6 max-w-md text-left">
-        <SignupForm />
+        <SignupForm interest={interest} />
       </div>
     </section>
   );

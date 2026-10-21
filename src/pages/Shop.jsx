@@ -147,7 +147,7 @@ export default function Shop({ category }) {
 
       {comingSoon ? (
         <div className="mt-8 md:mt-10">
-          <ComingSoon />
+          <ComingSoon interest={category} />
         </div>
       ) : (
         <ProductBrowser key={category} category={category} products={products} />
