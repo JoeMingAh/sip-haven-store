@@ -99,7 +99,7 @@ export function returnOrigin(requestOrigin) {
   if (siteUrl) return siteUrl;
   throw new Error(
     'SITE_URL is not set, and the request Origin is not an address this site is served from, ' +
-      'so there is nowhere to send the shopper back to. Set SITE_URL, like https://siphaven.com.',
+      'so there is nowhere to send the shopper back to. Set SITE_URL, like https://www.siphaven.com.',
   );
 }
 

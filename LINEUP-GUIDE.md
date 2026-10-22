@@ -32,6 +32,8 @@ In the order they appear in the sheet. "First row" means the product's first row
 | `amount` | first row | no | Brew guide: how much to use. | `1 tsp per cup` |
 | `steep_time` | first row | no | Brew guide: how long to steep. A coffee shows it as "Brew time". | `2-3 minutes` |
 | `tags` | first row | no | Words the quiz uses to find the product, as a list. See "Tags for the quiz" below. The "You might also like" row on a product page also suggests products of the same category that share a tag. | `floral` |
+| `aromas` | first row | no | What the product smells like, as a list. The quiz's aroma question finds products by these words. See "Aromas for the quiz" below. | `jasmine` |
+| `moods` | first row | no | How the product makes you feel, as a list. The quiz's mood question finds products by these words. See "Moods for the quiz" below. | `calm` |
 | `featured` | first row | no | `yes` to show the product on the home page. `no` or blank otherwise. | `yes` |
 | `images` | first row | no | Photo file names or web addresses, as a list. The first is the main photo. Leave it blank until the photos are in: the shop shows a drawing for a product with no photo. | `/images/jasmine-1.jpg` |
 | `format` | every row | yes | How this row is sold. Tea: `loose-leaf`, `tea-bags` or `k-cup`. Coffee: `whole-bean` or `ground`. | `loose-leaf` |
@@ -52,7 +54,39 @@ The quiz asks "Which flavors sound best?" and finds products by the words in the
 
 For example, a tea with `floral|sweet` in its `tags` suits both the Floral answer and the Sweet and spiced answer. Other words in `tags`, like `everyday` or `gift`, are fine too. The quiz ignores them, and "You might also like" uses them.
 
-The quiz also reads three other columns: `category` (tea or coffee), `caffeine` (it has to match the answer exactly, and it counts for the most, except that "Caffeine-free" is a rule, not just points: it only ever picks products whose `caffeine` is `none`, however well they fit the other answers) and `format` ("Quick and easy" looks for `k-cup`, `tea-bags` and `ground`, and "A slow ritual" looks for `loose-leaf` and `whole-bean`). It only picks products that can be bought, which means their prices have been sent to Stripe. A product with no matching tag can still come up because of its caffeine or format, but never because of its flavor.
+## Aromas for the quiz
+
+Right after flavor, the quiz asks "Which aroma pulls you in?" and finds products by the words in their `aromas` column. A product only turns up for an aroma answer if its aromas include one of the words below. Spell them exactly as shown; capital letters do not matter. "Surprise me" looks for no aroma.
+
+| Quiz answer | Aromas it looks for |
+| --- | --- |
+| Floral | `jasmine`, `rose`, `lavender`, `orchid` |
+| Toasty and smoky | `smoky`, `roasted`, `nutty`, `cocoa` |
+| Bright and citrusy | `citrus`, `lemon`, `bergamot`, `berry` |
+| Sweet | `vanilla`, `caramel`, `honey`, `malty` |
+| Fresh and herbal | `grassy`, `mint`, `herbal`, `ocean` |
+
+For example, an Earl Grey with `bergamot|malty` in its `aromas` suits both Bright and citrusy and Sweet. Fill this column in for every product: one with no aroma from the list above can still come up for its other answers, but never because of its aroma. `npm run load-lineup` lists any product that has none.
+
+## Moods for the quiz
+
+Right after "Tea or coffee today?", the quiz asks "How do you want to feel?" and finds products by the words in their `moods` column. Tag each product with every mood it suits. Spell them exactly as shown; capital letters do not matter.
+
+| Quiz answer | Mood it looks for |
+| --- | --- |
+| Calm and unwound | `calm` |
+| Focused and productive | `focused` |
+| Energized and ready | `energized` |
+| Cozy and comforted | `cozy` |
+| Light and refreshed | `refreshed` |
+
+For example, a chamomile with `calm|cozy` in its `moods` suits both Calm and unwound and Cozy and comforted. The column may be left blank: the product still loads and can still come up for its other answers, but never because of its mood. `npm run load-lineup` lists any product that has none.
+
+## How the quiz ranks
+
+The quiz also reads three other columns: `category` (tea or coffee), `caffeine` (it has to match the answer exactly, and it counts for the most, except that "Caffeine-free" is a rule, not just points: it only ever picks products whose `caffeine` is `none`, however well they fit the other answers, even for a shopper who wants to feel energized) and `format` ("Quick and easy" looks for `k-cup`, `tea-bags` and `ground`, and "A slow ritual" looks for `loose-leaf` and `whole-bean`). It only picks products that can be bought, which means their prices have been sent to Stripe. A product with no matching tag can still come up because of its caffeine, aroma, mood or format, but never because of its flavor.
+
+The answers count in this order: caffeine first, then flavor (`tags`), then aroma (`aromas`), then mood (`moods`), then format. A match higher up always beats any number of matches below it, so between two products that fit the caffeine and flavor equally, the one with the chosen aroma comes first, and between two that also tie on aroma, the one with the chosen mood. Mood is there to break ties: it never outweighs the caffeine, flavor or aroma answers.
 
 ## After you fill it in
 

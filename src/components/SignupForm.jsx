@@ -10,15 +10,22 @@ const SUCCESS_MESSAGE =
 const OPEN_SUCCESS_MESSAGE = "You're on the list. We'll keep you posted on new teas and coffees.";
 
 /**
- * Email signup. Posts { email, interest? } to /api/subscribe and shows what comes
- * back: the confirmation, or the API's own error text. The confirmation depends on
- * whether the shop is open (see the two messages above).
+ * Email signup. Posts { email, interest?, answers?, topMatch?, matches?, source } to
+ * /api/subscribe and shows what comes back: the confirmation, or the API's own error
+ * text. The confirmation depends on whether the shop is open (see the two messages
+ * above).
  *
  * The form turns off the browser's own checking (noValidate). The server decides
  * what a valid address is, so the visitor always sees its one message, styled like
  * the rest of the page, instead of a different bubble per browser.
  *
- * `interest` ('tea', 'coffee' or 'both') is sent along when the caller knows it.
+ * `interest` ('tea', 'coffee' or 'both') is sent along when the caller knows it. The
+ * quiz also passes its `answers` ({ drink, mood, caffeine, flavor, aroma, style }), the slugs
+ * of its picks, best first, as `matches` and the first of them as `topMatch` (when it
+ * has any), and `source` 'quiz'. Every other form is
+ * `source` 'site', the default. The server checks all of these and drops what it does
+ * not know, so none of them can make a signup fail.
+ *
  * The status line below is a live region that is always in the page, so a screen
  * reader announces the confirmation or the error when its text appears.
  *
@@ -26,7 +33,7 @@ const OPEN_SUCCESS_MESSAGE = "You're on the list. We'll keep you posted on new t
  * the confirmation, and while the field is aria-invalid its border turns thick, dashed
  * and red-800, a difference of line as well as of hue.
  */
-export default function SignupForm({ interest }) {
+export default function SignupForm({ interest, answers, topMatch, matches, source = 'site' }) {
   const fieldId = useId();
   const statusId = `${fieldId}-status`;
   const [email, setEmail] = useState('');
@@ -49,7 +56,14 @@ export default function SignupForm({ interest }) {
       const response = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(interest ? { email, interest } : { email }),
+        body: JSON.stringify({
+          email,
+          ...(interest && { interest }),
+          ...(answers && { answers }),
+          ...(topMatch && { topMatch }),
+          ...(matches?.length > 0 && { matches }),
+          source,
+        }),
       });
       if (response.ok) {
         setStatus('done');

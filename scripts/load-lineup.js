@@ -10,10 +10,17 @@
 // cannot be edited, so a new amount gets a new price and the old one is turned off.
 // Nothing is deleted. Nothing is sent to Stripe unless the lineup passes validateLineup
 // and none of its products is still a sample row from lineup-template.csv.
+//
+// It also notes any product the quiz's aroma question cannot find (its `aromas`, the
+// aromas column of the sheet, has none of the words the quiz looks for) and any aroma
+// word the quiz does not know, so a blank or misspelt aromas cell is noticed, and the
+// same for the mood question and the moods column. These are notes only: Stripe does
+// not use aromas or moods, and the product is loaded either way.
 import { readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import Stripe from 'stripe';
 import { validateLineup } from '../lib/catalog.js';
+import { QUIZ_AROMAS, QUIZ_MOODS } from '../lib/quiz.js';
 import { DEFAULT_TAX_CODE } from '../lib/store-config.js';
 
 const LINEUP_URL = new URL('../src/data/lineup.json', import.meta.url);
@@ -267,6 +274,53 @@ export async function syncLineup(lineup, stripe, { live = false, apiKey } = {}) 
   return { lineup: result, report };
 }
 
+// The notes on one list column (`field`, like 'aromas') that a quiz question (`word`,
+// like 'aroma') reads, against the words that question looks for (`known`).
+function listNotes(lineup, { field, word, known }) {
+  const notes = [];
+  const products = Array.isArray(lineup?.products) ? lineup.products : [];
+  for (const product of products) {
+    // A lineup that fails validation is reported by syncLineup; there is nothing to note.
+    if (typeof product?.name !== 'string') continue;
+    const words = (Array.isArray(product[field]) ? product[field] : [])
+      .filter((item) => typeof item === 'string' && item.trim() !== '')
+      .map((item) => item.trim());
+    const isKnown = (item) => known.includes(item.toLowerCase());
+    const unknown = words.filter((item) => !isKnown(item));
+    if (!words.some(isKnown)) {
+      notes.push(
+        `Note: ${product.name} has no ${word} the quiz looks for, so the ${word} question will not ` +
+          `find it. Fill in its ${field} column (LINEUP-GUIDE.md lists the words).`,
+      );
+    }
+    if (unknown.length > 0) {
+      notes.push(
+        `Note: the quiz does not look for these ${field} of ${product.name}: ` +
+          `${unknown.map((item) => `'${item}'`).join(', ')}. Check the spelling if they should count.`,
+      );
+    }
+  }
+  return notes;
+}
+
+/**
+ * Notes, in plain English, on the products' aromas: one line for each product the quiz's
+ * aroma question can never find, and one for each product with aroma words the quiz
+ * does not look for (a typo, say). [] when every product has a known aroma and no
+ * unknown ones. Words are compared without regard to case or spacing, as the quiz does.
+ */
+export function aromaNotes(lineup) {
+  return listNotes(lineup, { field: 'aromas', word: 'aroma', known: QUIZ_AROMAS });
+}
+
+/**
+ * The same notes as aromaNotes, on the products' moods: a product the mood question can
+ * never find, and mood words the quiz does not look for.
+ */
+export function moodNotes(lineup) {
+  return listNotes(lineup, { field: 'moods', word: 'mood', known: QUIZ_MOODS });
+}
+
 const USAGE = 'Usage: npm run load-lineup   (to use a live key: npm run load-lineup -- --live)';
 
 /**
@@ -338,6 +392,8 @@ export async function runCli(args, io = {}) {
       ? 'Using a LIVE Stripe key: this changes the real shop.'
       : 'Using a Stripe test key.',
   );
+  for (const note of aromaNotes(lineup)) log(note);
+  for (const note of moodNotes(lineup)) log(note);
 
   let result;
   try {

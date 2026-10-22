@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { validateLineup } from '../lib/catalog.js';
-import { QUIZ_QUESTIONS } from '../lib/quiz.js';
+import { QUIZ_AROMAS, QUIZ_MOODS, QUIZ_QUESTIONS } from '../lib/quiz.js';
 import { csvToLineup, runCli } from './csv-to-lineup.js';
 
 // Every word the quiz's flavor question looks for in a product's tags, read from the
@@ -28,6 +28,8 @@ const COLUMNS = [
   'amount',
   'steep_time',
   'tags',
+  'aromas',
+  'moods',
   'featured',
   'images',
   'format',
@@ -194,27 +196,63 @@ describe('csvToLineup', () => {
   });
 
   describe('list columns', () => {
-    it('splits flavor_notes, tags and images on |', () => {
+    it('splits flavor_notes, tags, aromas, moods and images on |', () => {
       const [product] = convert([
-        row({ flavor_notes: 'floral|honey', tags: 'afternoon|calming', images: '/a.jpg|/b.jpg' }),
+        row({
+          flavor_notes: 'floral|honey',
+          tags: 'afternoon|calming',
+          aromas: 'jasmine|honey',
+          moods: 'calm|cozy',
+          images: '/a.jpg|/b.jpg',
+        }),
       ]).products;
       expect(product.flavor_notes).toEqual(['floral', 'honey']);
       expect(product.tags).toEqual(['afternoon', 'calming']);
+      expect(product.aromas).toEqual(['jasmine', 'honey']);
+      expect(product.moods).toEqual(['calm', 'cozy']);
       expect(product.images).toEqual(['/a.jpg', '/b.jpg']);
     });
 
     it('trims items and drops empty ones', () => {
-      const [product] = convert([row({ flavor_notes: ' floral | honey ', tags: '|calming||' })])
-        .products;
+      const [product] = convert([
+        row({
+          flavor_notes: ' floral | honey ',
+          tags: '|calming||',
+          aromas: ' lemon || bergamot ',
+          moods: '| focused || energized |',
+        }),
+      ]).products;
       expect(product.flavor_notes).toEqual(['floral', 'honey']);
       expect(product.tags).toEqual(['calming']);
+      expect(product.aromas).toEqual(['lemon', 'bergamot']);
+      expect(product.moods).toEqual(['focused', 'energized']);
     });
 
     it('turns a blank list cell into an empty list', () => {
-      const [product] = convert([row({ flavor_notes: '', tags: '', images: '' })]).products;
+      const [product] = convert([
+        row({ flavor_notes: '', tags: '', aromas: '', moods: '', images: '' }),
+      ]).products;
       expect(product.flavor_notes).toEqual([]);
       expect(product.tags).toEqual([]);
+      expect(product.aromas).toEqual([]);
+      expect(product.moods).toEqual([]);
       expect(product.images).toEqual([]);
+    });
+
+    it('lets a product with blank moods and blank aromas through validation', () => {
+      expect(errorsFor([row({ aromas: '', moods: '' })])).toEqual([]);
+    });
+
+    it('reads aromas from the first row of a slug only', () => {
+      const [product] = convert([row({ aromas: 'jasmine' }), row({ ...teaBags, aromas: 'smoky' })])
+        .products;
+      expect(product.aromas).toEqual(['jasmine']);
+    });
+
+    it('reads moods from the first row of a slug only', () => {
+      const [product] = convert([row({ moods: 'calm' }), row({ ...teaBags, moods: 'energized' })])
+        .products;
+      expect(product.moods).toEqual(['calm']);
     });
   });
 
@@ -309,6 +347,8 @@ describe('csvToLineup', () => {
           amount: '1 tsp per cup',
           steep_time: '2-3 minutes',
           tags: 'floral|afternoon',
+          aromas: 'jasmine|honey',
+          moods: 'calm|refreshed',
           featured: 'yes',
           images: '/images/jasmine.jpg',
         }),
@@ -328,6 +368,8 @@ describe('csvToLineup', () => {
             origin: 'Test Valley',
             brew_guide: { water_temp: '175 F', amount: '1 tsp per cup', steep_time: '2-3 minutes' },
             tags: ['floral', 'afternoon'],
+            aromas: ['jasmine', 'honey'],
+            moods: ['calm', 'refreshed'],
             featured: true,
             images: ['/images/jasmine.jpg'],
             variants: [
@@ -444,6 +486,20 @@ describe('csvToLineup', () => {
       );
     });
 
+    it('refuses a sheet made from the old template, which had no aromas column', () => {
+      const columns = COLUMNS.filter((column) => column !== 'aromas');
+      expect(() => csvToLineup(toCsv([row()], columns), NO_EXISTING)).toThrow(
+        'missing these columns: aromas',
+      );
+    });
+
+    it('refuses a sheet made from the template before moods, which had no moods column', () => {
+      const columns = COLUMNS.filter((column) => column !== 'moods');
+      expect(() => csvToLineup(toCsv([row()], columns), NO_EXISTING)).toThrow(
+        'missing these columns: moods',
+      );
+    });
+
     it('returns no products for an empty file or one with only headings', () => {
       expect(csvToLineup('', NO_EXISTING)).toEqual({ products: [] });
       expect(csvToLineup(toCsv([]), NO_EXISTING)).toEqual({ products: [] });
@@ -483,6 +539,29 @@ describe('lineup-template.csv', () => {
     }
   });
 
+  it('gives the examples aromas the quiz looks for, to show what the aromas column is for', () => {
+    for (const product of csvToLineup(template, NO_EXISTING).products) {
+      expect(product.aromas.length, `${product.slug} has aromas`).toBeGreaterThan(0);
+      for (const aroma of product.aromas) {
+        expect(QUIZ_AROMAS, `${product.slug}: ${aroma} is a quiz aroma`).toContain(aroma);
+      }
+    }
+  });
+
+  it('gives the examples moods the quiz looks for, to show what the moods column is for', () => {
+    for (const product of csvToLineup(template, NO_EXISTING).products) {
+      expect(product.moods.length, `${product.slug} has moods`).toBeGreaterThan(0);
+      for (const mood of product.moods) {
+        expect(QUIZ_MOODS, `${product.slug}: ${mood} is a quiz mood`).toContain(mood);
+      }
+    }
+  });
+
+  it('lists every quiz mood in the notes on an example row', () => {
+    const notes = csvToLineup(template, NO_EXISTING).products.map((product) => product.story ?? '');
+    expect(notes.some((note) => QUIZ_MOODS.every((mood) => note.includes(mood)))).toBe(true);
+  });
+
   it('lists the quiz flavor tags, and points to the guide, in the notes on an example row', () => {
     // A CSV cannot hold comments, so the notes ride in an example row's story cell.
     const notes = csvToLineup(template, NO_EXISTING).products.map((product) => product.story ?? '');
@@ -506,6 +585,27 @@ describe('LINEUP-GUIDE.md', () => {
 
   it.each(QUIZ_FLAVOR_TAGS)('names the quiz flavor tag "%s"', (tag) => {
     expect(guide).toContain(`\`${tag}\``);
+  });
+
+  it.each(QUIZ_AROMAS)('names the quiz aroma "%s"', (aroma) => {
+    expect(guide).toContain(`\`${aroma}\``);
+  });
+
+  it('says the quiz reads the aromas column', () => {
+    expect(guide).toMatch(/quiz[^\n]*`aromas`|`aromas`[^\n]*quiz/i);
+  });
+
+  it.each(QUIZ_MOODS)('names the quiz mood "%s"', (mood) => {
+    expect(guide).toContain(`\`${mood}\``);
+  });
+
+  it('says the quiz reads the moods column, which may be left blank', () => {
+    expect(guide).toMatch(/quiz[^\n]*`moods`|`moods`[^\n]*quiz/i);
+    expect(guide).toMatch(/`moods`[^\n]*blank|blank[^\n]*`moods`|column may be left blank/i);
+  });
+
+  it('ranks mood below aroma and above format, as the quiz scores it', () => {
+    expect(guide).toMatch(/then aroma \(`aromas`\), then mood \(`moods`\), then format/);
   });
 
   it('says which column the quiz reads and which the flavor filter reads', () => {

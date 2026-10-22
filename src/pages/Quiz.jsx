@@ -2,10 +2,11 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { ArrowLeft, Check, RotateCcw } from 'lucide-react';
 import { isStoreOpen } from '../../lib/store-config.js';
 import { getProducts } from '../../lib/catalog.js';
-import { QUIZ_QUESTIONS, interestFor, recommend } from '../../lib/quiz.js';
+import { MAX_RECOMMENDATIONS, QUIZ_QUESTIONS, recommend } from '../../lib/quiz.js';
 import ProductCard from '../components/ProductCard.jsx';
 import SignupForm from '../components/SignupForm.jsx';
 import { cupWithSteam } from '../assets/placeholders/index.js';
+import { sendQuizNote } from '../quizNote.js';
 
 // DRAFT COPY: the wording on this page needs Joseph's approval. The questions and
 // their answers are in lib/quiz.js, with their own note.
@@ -97,7 +98,7 @@ function Answer({ answer, chosen, onChoose }) {
 }
 
 // A question, in its panel: the dots, the heading and its answers. The visually hidden
-// "Question N of 4" is inside the heading, which is what takes focus, so it is read out
+// "Question N of 6" (one per question in lib/quiz.js) is inside the heading, which is what takes focus, so it is read out
 // with the question each time the quiz moves on.
 function Question({ question, step, chosenId, grabFocus, onChoose }) {
   const headingId = useId();
@@ -125,10 +126,28 @@ function Question({ question, step, chosenId, grabFocus, onChoose }) {
   );
 }
 
+// The signup on the result. It sends the quiz answers, the slugs of the picks on screen
+// (best first, when there are any) with the first as the top match, and source 'quiz',
+// so the email list knows what this shopper likes and which products suit them.
+function QuizSignup({ answers, matches = [] }) {
+  const headingId = useId();
+
+  return (
+    <section aria-labelledby={headingId} className="mx-auto max-w-md text-left">
+      <h3 id={headingId} className="font-serif text-xl font-semibold text-sage-deep">
+        Get your matches by email
+      </h3>
+      <div className="mt-3">
+        <SignupForm answers={answers} topMatch={matches[0]} matches={matches} source="quiz" />
+      </div>
+    </section>
+  );
+}
+
 // What the shopper sees when the shop has nothing to show them yet: the store is
 // closed, or nothing in the lineup fits. No products and no prices, only a way to be
 // told when there is a match.
-function StillBlending({ interest, grabFocus }) {
+function StillBlending({ answers, grabFocus }) {
   return (
     <div className="mx-auto max-w-xl rounded-3xl bg-sage-tint px-6 py-10 text-center sm:px-10">
       <img src={cupWithSteam} alt="" className="mx-auto h-20 w-20" />
@@ -138,16 +157,16 @@ function StillBlending({ interest, grabFocus }) {
       <p className="mx-auto mt-3 max-w-md text-pretty text-lg leading-relaxed">
         Leave your email and we'll tell you as soon as we have a cup that suits you.
       </p>
-      <div className="mx-auto mt-6 max-w-md text-left">
-        <SignupForm interest={interest} />
+      <div className="mt-6">
+        <QuizSignup answers={answers} />
       </div>
     </div>
   );
 }
 
 // The picks, as the same cards the shop uses. Three across from md up; two across on
-// a phone, where a third or a lone card sits centered under them.
-function Picks({ products, grabFocus }) {
+// a phone, where a third or a lone card sits centered under them. The signup follows.
+function Picks({ products, answers, grabFocus }) {
   return (
     <div>
       <StepHeading grabFocus={grabFocus} className={`text-center ${STEP_HEADING}`}>
@@ -163,6 +182,9 @@ function Picks({ products, grabFocus }) {
           </li>
         ))}
       </ul>
+      <div className="mx-auto mt-10 max-w-xl rounded-3xl bg-sage-tint px-6 py-8 sm:px-10">
+        <QuizSignup answers={answers} matches={products.map((product) => product.slug)} />
+      </div>
     </div>
   );
 }
@@ -170,19 +192,33 @@ function Picks({ products, grabFocus }) {
 // While the store is closed nothing is looked up at all, so no product can reach the
 // page. ProductCard also draws nothing when the store is closed; this keeps the
 // heading and the list from appearing around empty cards.
+//
+// When the lineup cannot fill all MAX_RECOMMENDATIONS picks (which is always, while the
+// store is closed), the answers are noted anonymously as an idea for a future product
+// (see src/quizNote.js). Once per result: the result is mounted fresh each time the
+// last question is answered, and the ref keeps a second effect run from sending twice.
 function Result({ answers, grabFocus }) {
   const picks = isStoreOpen() ? recommend(answers, getProducts()) : [];
+  const noted = useRef(false);
+
+  useEffect(() => {
+    if (noted.current || picks.length >= MAX_RECOMMENDATIONS) return;
+    noted.current = true;
+    sendQuizNote(answers, picks.length);
+  }, [answers, picks.length]);
 
   return picks.length > 0 ? (
-    <Picks products={picks} grabFocus={grabFocus} />
+    <Picks products={picks} answers={answers} grabFocus={grabFocus} />
   ) : (
-    <StillBlending interest={interestFor(answers)} grabFocus={grabFocus} />
+    <StillBlending answers={answers} grabFocus={grabFocus} />
   );
 }
 
 /**
  * The find-your-cup quiz: one question at a time, then up to three products from
- * the lineup (see lib/quiz.js), or the signup form when there is nothing to show.
+ * the lineup (see lib/quiz.js), or a still-blending panel when there is nothing to
+ * show. Either way the result ends with "Get your matches by email", a signup that
+ * sends the answers along.
  *
  * It always has its own h1. `step` counts up from the first question; once it passes
  * the last, the page shows the result. Back goes one step toward the first question

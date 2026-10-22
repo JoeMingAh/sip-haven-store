@@ -105,6 +105,43 @@ const optionsIn = (name) =>
     .map((checkbox) => checkbox.closest('label').textContent);
 const clearButtons = () => main().queryAllByRole('button', { name: 'Clear filters' });
 
+// Both signups on a shop page (the coming-soon panel and the footer) know the drink.
+describe('Shop: the signups send the page drink as the interest', () => {
+  async function signUpIn(container) {
+    fireEvent.change(within(container).getByLabelText('Email address'), {
+      target: { value: 'sam@example.com' },
+    });
+    fireEvent.click(within(container).getByRole('button', { name: 'Join the list' }));
+    await within(container).findByText(/You're on the list/);
+  }
+
+  let fetchMock;
+  beforeEach(() => {
+    fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ ok: true }) });
+    vi.stubGlobal('fetch', fetchMock);
+    return () => vi.unstubAllGlobals();
+  });
+  const posted = () => JSON.parse(fetchMock.mock.calls[0][1].body);
+
+  it.each(['tea', 'coffee'])('sends interest %s from the coming-soon panel, with source site', async (drink) => {
+    renderShop(`/${drink}`);
+    await signUpIn(main().getByRole('region', { name: 'Our first collection is brewing' }));
+    expect(posted()).toEqual({ email: 'sam@example.com', interest: drink, source: 'site' });
+  });
+
+  it.each(['tea', 'coffee'])('sends interest %s from the footer, with source site', async (drink) => {
+    renderShop(`/${drink}`);
+    await signUpIn(screen.getByRole('contentinfo'));
+    expect(posted()).toEqual({ email: 'sam@example.com', interest: drink, source: 'site' });
+  });
+
+  it('sends no interest from the footer on a page that does not know one', async () => {
+    renderShop('/our-story');
+    await signUpIn(screen.getByRole('contentinfo'));
+    expect(posted()).toEqual({ email: 'sam@example.com', source: 'site' });
+  });
+});
+
 describe('Shop: store closed', () => {
   it('shows the coming-soon panel under its own h1', () => {
     shop.products = LINEUP;

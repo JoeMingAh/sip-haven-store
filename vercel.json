@@ -4,7 +4,19 @@
       "includeFiles": "src/data/lineup.json"
     }
   },
+  "trailingSlash": false,
   "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/tea", "destination": "/index.html" },
+    { "source": "/coffee", "destination": "/index.html" },
+    { "source": "/products/:slug", "destination": "/index.html" },
+    { "source": "/quiz", "destination": "/index.html" },
+    { "source": "/learn", "destination": "/index.html" },
+    { "source": "/learn/:slug", "destination": "/index.html" },
+    { "source": "/our-story", "destination": "/index.html" },
+    { "source": "/contact", "destination": "/index.html" },
+    { "source": "/shipping-returns", "destination": "/index.html" },
+    { "source": "/privacy", "destination": "/index.html" },
+    { "source": "/success", "destination": "/index.html" },
+    { "source": "/cart", "destination": "/index.html" }
   ]
 }

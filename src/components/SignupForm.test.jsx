@@ -98,7 +98,7 @@ describe('SignupForm: the form', () => {
     fireEvent.change(second, { target: { value: 'second@example.com' } });
     fireEvent.click(screen.getAllByRole('button', { name: 'Join the list' })[1]);
     await screen.findByText(SUCCESS_TEXT);
-    expect(postedBody()).toEqual({ email: 'second@example.com' });
+    expect(postedBody()).toEqual({ email: 'second@example.com', source: 'site' });
   });
 });
 
@@ -114,7 +114,7 @@ describe('SignupForm: what it posts', () => {
     expect(url).toBe('/api/subscribe');
     expect(init.method).toBe('POST');
     expect(init.headers).toEqual({ 'Content-Type': 'application/json' });
-    expect(JSON.parse(init.body)).toEqual({ email: 'jane@example.com' });
+    expect(JSON.parse(init.body)).toEqual({ email: 'jane@example.com', source: 'site' });
   });
 
   it.each(['tea', 'coffee', 'both'])('includes interest %s when the form has one', async (interest) => {
@@ -122,7 +122,7 @@ describe('SignupForm: what it posts', () => {
     render(<SignupForm interest={interest} />);
     submit('jane@example.com');
     await screen.findByText(SUCCESS_TEXT);
-    expect(postedBody()).toEqual({ email: 'jane@example.com', interest });
+    expect(postedBody()).toEqual({ email: 'jane@example.com', interest, source: 'site' });
   });
 
   it('leaves interest out when the form has none', async () => {
@@ -131,6 +131,43 @@ describe('SignupForm: what it posts', () => {
     submit('jane@example.com');
     await screen.findByText(SUCCESS_TEXT);
     expect(postedBody()).not.toHaveProperty('interest');
+  });
+
+  it("sends the quiz's answers, its picks and source 'quiz' when the quiz passes them", async () => {
+    fetchMock.mockResolvedValue(reply(200, { ok: true }));
+    const answers = { drink: 'tea', mood: 'cozy', caffeine: 'none', flavor: 'floral', aroma: 'fresh', style: 'ritual' };
+    const matches = ['chamomile-meadow', 'mint-calm'];
+    render(
+      <SignupForm answers={answers} topMatch="chamomile-meadow" matches={matches} source="quiz" />,
+    );
+    submit('jane@example.com');
+    await screen.findByText(SUCCESS_TEXT);
+    expect(postedBody()).toEqual({
+      email: 'jane@example.com',
+      answers,
+      topMatch: 'chamomile-meadow',
+      matches,
+      source: 'quiz',
+    });
+  });
+
+  it('leaves matches out when the list is empty', async () => {
+    fetchMock.mockResolvedValue(reply(200, { ok: true }));
+    render(<SignupForm answers={{ drink: 'tea' }} matches={[]} source="quiz" />);
+    submit('jane@example.com');
+    await screen.findByText(SUCCESS_TEXT);
+    expect(postedBody()).not.toHaveProperty('matches');
+  });
+
+  it('leaves answers, topMatch and matches out when the form has none, and says source "site"', async () => {
+    fetchMock.mockResolvedValue(reply(200, { ok: true }));
+    render(<SignupForm interest="coffee" />);
+    submit('jane@example.com');
+    await screen.findByText(SUCCESS_TEXT);
+    expect(postedBody()).not.toHaveProperty('answers');
+    expect(postedBody()).not.toHaveProperty('topMatch');
+    expect(postedBody()).not.toHaveProperty('matches');
+    expect(postedBody().source).toBe('site');
   });
 });
 
@@ -182,7 +219,7 @@ describe('SignupForm: success', () => {
     submit('jane@example.com');
     await screen.findByText(OPEN_SUCCESS_TEXT);
     expect(fetchMock.mock.calls[0][0]).toBe('/api/subscribe');
-    expect(postedBody()).toEqual({ email: 'jane@example.com', interest: 'tea' });
+    expect(postedBody()).toEqual({ email: 'jane@example.com', interest: 'tea', source: 'site' });
   });
 
   it('shows the same error text whether the shop is open or not', async () => {
@@ -343,7 +380,7 @@ describe('SignupForm: errors', () => {
     render(<SignupForm />);
     submit('not-an-email');
     await screen.findByText('Please enter a valid email.');
-    expect(postedBody()).toEqual({ email: 'not-an-email' });
+    expect(postedBody()).toEqual({ email: 'not-an-email', source: 'site' });
   });
 
   it.each([

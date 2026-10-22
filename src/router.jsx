@@ -18,6 +18,11 @@ import Success from './pages/Success.jsx';
 // inside the CartProvider, so the Header's Cart button, the product pages and the
 // cart drawer all share one cart. main.jsx turns this list into the browser router,
 // and the tests build memory routers from it.
+//
+// A new page also needs a rewrite to /index.html in vercel.json. Only the routes listed
+// there load the app with a 200; any other address gets Vercel's 404.html (the app
+// again, showing NotFound) with a real 404 status. src/routing.test.js checks the two
+// lists agree.
 export const routes = [
   {
     path: '/',
