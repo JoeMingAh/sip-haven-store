@@ -22,7 +22,7 @@ export default {
                 "sage-tint": "#DDE5D3",
                 ink: "#2F3A2E",
             },
-            // Lora and Nunito Sans are loaded from Google Fonts in index.html.
+            // Lora and Nunito Sans are self-hosted from @fontsource (see src/main.jsx).
             fontFamily: {
                 serif: ["Lora", "ui-serif", "Georgia", "serif"],
                 sans: ['"Nunito Sans"', "ui-sans-serif", "system-ui", "sans-serif"],

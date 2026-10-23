@@ -3,8 +3,11 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { routes } from './router.jsx';
+import { PAGE_META } from './data/pageMeta.js';
+import { htmlFileFor } from '../lib/page-html.js';
 
-// vercel.json sends only the app's own routes to index.html. Anything else falls
+// vercel.json sends only the app's own routes to the app: a page with its own tags in
+// src/data/pageMeta.js to its own HTML file, any other route to app.html. Anything else falls
 // through to the build's 404.html with a real 404 status (see lib/site-files.js). This
 // checks that every route in src/router.jsx has its rewrite, and that addresses that
 // are no page (and robots.txt and sitemap.xml) do not.
@@ -42,7 +45,14 @@ describe('vercel.json rewrites', () => {
     'sends %s to %s, in a shape this check can read',
     (source, destination) => {
       expect(source).toMatch(SUPPORTED_SOURCE);
-      expect(destination).toBe('/index.html');
+      expect(destination).toBe(PAGE_META[source] ? `/${htmlFileFor(source)}` : '/app.html');
+    },
+  );
+
+  it.each(Object.keys(PAGE_META).filter((page) => page !== '/'))(
+    'sends %s to its own HTML file, with its own title and description',
+    (page) => {
+      expect(rewrites).toContainEqual({ source: page, destination: `/${htmlFileFor(page)}` });
     },
   );
 

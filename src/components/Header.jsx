@@ -5,8 +5,10 @@ import { isStoreOpen } from '../../lib/store-config.js';
 import { useCart } from '../cart/CartContext.jsx';
 import { headerLinks } from './navLinks.js';
 
+// min-h-11, min-w-11 and the padding make every link at least 44px square to tap, even
+// a short word like "Tea" on a phone.
 const linkClass = ({ isActive }) =>
-  `inline-flex min-h-11 items-center border-b-2 text-[15px] font-semibold ${
+  `inline-flex min-h-11 min-w-11 items-center justify-center border-b-2 px-1 text-[15px] font-semibold ${
     isActive
       ? 'border-sage-deep text-sage-deep'
       : 'border-transparent text-ink hover:text-sage-deep'

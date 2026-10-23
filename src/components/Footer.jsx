@@ -16,7 +16,7 @@ function FooterColumn({ title, links }) {
           <li key={to}>
             <Link
               to={to}
-              className="inline-block py-1.5 text-sm text-ink underline-offset-4 hover:text-sage-deep hover:underline"
+              className="inline-block min-w-11 py-1.5 text-sm text-ink underline-offset-4 hover:text-sage-deep hover:underline"
             >
               {label}
             </Link>
