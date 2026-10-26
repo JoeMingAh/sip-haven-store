@@ -37,7 +37,7 @@ const mainText = () => screen.getByRole('main').textContent;
 const levels = () => main().getAllByRole('heading').map((heading) => Number(heading.tagName[1]));
 
 const PAGES = [
-  { path: '/our-story', title: 'Sip Haven is a place to slow down and remember.' },
+  { path: '/our-story', title: 'Our story' },
   { path: '/contact', title: 'Contact us' },
   { path: '/shipping-returns', title: 'Shipping and returns' },
   { path: '/privacy', title: 'Privacy' },
@@ -87,7 +87,10 @@ describe('Our story', () => {
     'Life is a sum of all your experiences. A good cup gives you a reason to stop, take a breath and let it all catch up with you.',
     "A mug of coffee before the house wakes up. A pot of loose-leaf tea on a Sunday afternoon. Small rituals that leave you grateful for how far you've come.",
     "We're building a collection of loose-leaf tea, tea bags, tea K-Cups, and whole bean and ground coffee for those pauses.",
+    "Not sure where to start? Try the quiz and we'll point you toward a cup you might love.",
     'Take the quiz',
+    'Browse tea',
+    'Browse coffee',
     'Questions',
     'What is Sip Haven?',
     'Sip Haven is an online tea and coffee store. We make tea and coffee for slow mornings, long talks and quiet moments to look back on.',
@@ -100,13 +103,15 @@ describe('Our story', () => {
   it('shows the approved story, with the questions as headings and the answers as text', () => {
     renderAt('/our-story');
     for (const text of APPROVED) expect(mainText()).toContain(text);
-    expect(main().getByText('Our story').tagName).toBe('P');
+    expect(main().getByRole('heading', { level: 1, name: 'Our story' })).toBeInTheDocument();
+    expect(main().getByText('Sip Haven is a place to slow down and remember.').tagName).toBe('P');
+    expect(screen.getByRole('main').querySelector('img')).toHaveAttribute('alt', '');
     expect(
       main()
         .getAllByRole('heading')
         .map((heading) => heading.textContent),
     ).toEqual([
-      'Sip Haven is a place to slow down and remember.',
+      'Our story',
       'Questions',
       'What is Sip Haven?',
       'What does Sip Haven sell?',
@@ -125,14 +130,18 @@ describe('Our story', () => {
     expect(mainText()).not.toMatch(/farm|award|founder|founded|customers/i);
   });
 
-  it('links Take the quiz to the quiz, and that link is the only filled button', () => {
+  it('offers the quiz, tea and coffee as the live page does', () => {
     renderAt('/our-story');
     const quiz = main().getByRole('link', { name: 'Take the quiz' });
+    const tea = main().getByRole('link', { name: 'Browse tea' });
+    const coffee = main().getByRole('link', { name: 'Browse coffee' });
     expect(quiz).toHaveAttribute('href', '/quiz');
     expect(quiz).toHaveClass('bg-sage-deep', 'text-cream', 'rounded-full');
-    expect(main().getAllByRole('link')).toHaveLength(1);
-    expect(screen.getByRole('main').querySelector('[class*="bg-sage-tint"]')).toBeNull();
-    expect(screen.getByRole('main').querySelector('[class*="border-"]')).toBeNull();
+    expect(tea).toHaveAttribute('href', '/tea');
+    expect(tea).toHaveClass('border-sage-deep', 'text-sage-deep', 'rounded-full');
+    expect(coffee).toHaveAttribute('href', '/coffee');
+    expect(coffee).toHaveClass('border-sage-deep', 'text-sage-deep', 'rounded-full');
+    expect(main().getAllByRole('link')).toHaveLength(3);
   });
 
   it('adds Organization and FAQPage structured data, and takes it away on leaving', async () => {

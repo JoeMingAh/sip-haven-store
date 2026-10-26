@@ -4,19 +4,24 @@
 import { DEFAULT_SITE_URL } from '../../lib/site-url.js';
 import { PAGE_META } from './pageMeta.js';
 
-// One column of copy. The headline is the only large line. The button label is the
-// only other new word on the page.
-export const OUR_STORY_EYEBROW = 'Our story';
+// The same shape as the live page: a leaf, "Our story", a serif subheading, then
+// the paragraphs and the three pill links. The questions sit below that.
+export const OUR_STORY_TITLE = 'Our story';
 
-export const OUR_STORY_HEADLINE = 'Sip Haven is a place to slow down and remember.';
+export const OUR_STORY_SUBHEAD = 'Sip Haven is a place to slow down and remember.';
 
 export const OUR_STORY_PARAGRAPHS = [
   'Life is a sum of all your experiences. A good cup gives you a reason to stop, take a breath and let it all catch up with you.',
   "A mug of coffee before the house wakes up. A pot of loose-leaf tea on a Sunday afternoon. Small rituals that leave you grateful for how far you've come.",
   "We're building a collection of loose-leaf tea, tea bags, tea K-Cups, and whole bean and ground coffee for those pauses.",
+  "Not sure where to start? Try the quiz and we'll point you toward a cup you might love.",
 ];
 
-export const OUR_STORY_QUIZ_LABEL = 'Take the quiz';
+export const OUR_STORY_LINKS = [
+  { href: '/quiz', label: 'Take the quiz', filled: true },
+  { href: '/tea', label: 'Browse tea', filled: false },
+  { href: '/coffee', label: 'Browse coffee', filled: false },
+];
 
 export const OUR_STORY_QUESTIONS_HEADING = 'Questions';
 
@@ -38,15 +43,20 @@ export const OUR_STORY_FAQS = [
   },
 ];
 
-// The same classes the React page uses, so the static copy is styled if it shows.
-// max-w-prose is 65 characters. The button is the only filled color on the page.
+// Classes shared with the live page, so the static copy matches it if it shows.
+// max-w-prose is about 65 characters. The filled button is the only solid accent.
 export const STORY_CLASS = {
-  page: 'mx-auto w-full max-w-prose px-4 py-16 md:py-24',
-  eyebrow: 'text-xs font-semibold uppercase tracking-wider text-sage-deep',
-  headline: 'mt-3 text-balance font-serif text-4xl font-semibold leading-tight text-sage-deep md:text-5xl',
-  paragraphs: 'mt-10 space-y-6 text-pretty text-lg leading-relaxed',
-  quiz: 'mt-10 inline-flex min-h-12 items-center rounded-full bg-sage-deep px-7 text-base font-semibold text-cream hover:bg-ink',
-  questions: 'mt-20 md:mt-28',
+  page: 'mx-auto w-full max-w-prose px-4 py-10 md:py-14',
+  leaf: 'h-16 w-16',
+  title: 'mt-4 text-balance font-serif text-4xl font-semibold leading-tight text-sage-deep md:text-5xl',
+  subhead: 'mt-4 text-pretty font-serif text-2xl leading-snug',
+  body: 'mt-5 text-pretty text-lg leading-relaxed',
+  actions: 'mt-8 flex flex-wrap gap-3',
+  filled:
+    'inline-flex min-h-12 items-center rounded-full bg-sage-deep px-7 text-base font-semibold text-cream hover:bg-ink',
+  outline:
+    'inline-flex min-h-12 items-center rounded-full border-2 border-sage-deep px-7 text-base font-semibold text-sage-deep hover:bg-sage-tint',
+  questions: 'mt-16 md:mt-24',
   questionsHeading: 'font-serif text-lg font-semibold text-sage-deep',
   question: 'mt-8 font-serif text-base font-semibold leading-snug',
   answer: 'mt-2 text-pretty leading-relaxed',

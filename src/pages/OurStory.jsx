@@ -1,14 +1,15 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { leafSprig } from '../assets/placeholders/index.js';
 import {
   FAQ_JSON_LD_ID,
   ORGANIZATION_JSON_LD_ID,
-  OUR_STORY_EYEBROW,
   OUR_STORY_FAQS,
-  OUR_STORY_HEADLINE,
+  OUR_STORY_LINKS,
   OUR_STORY_PARAGRAPHS,
   OUR_STORY_QUESTIONS_HEADING,
-  OUR_STORY_QUIZ_LABEL,
+  OUR_STORY_SUBHEAD,
+  OUR_STORY_TITLE,
   STORY_CLASS,
   ourStoryStructuredData,
 } from '../data/ourStory.js';
@@ -41,27 +42,33 @@ function StoryJsonLd() {
 }
 
 /**
- * /our-story. One column: the headline, three paragraphs, one button, then the
- * questions. Copy lives in src/data/ourStory.js. The build writes the same words
- * into our-story.html.
+ * /our-story. The live page's shape: the leaf, "Our story", a serif subheading,
+ * the paragraphs, and the three pill links. The questions follow, kept smaller.
+ * Copy lives in src/data/ourStory.js. The build writes the same words into
+ * our-story.html.
  */
 export default function OurStory() {
   return (
     <div className={STORY_CLASS.page}>
       <StoryJsonLd />
 
-      <p className={STORY_CLASS.eyebrow}>{OUR_STORY_EYEBROW}</p>
-      <h1 className={STORY_CLASS.headline}>{OUR_STORY_HEADLINE}</h1>
+      <img src={leafSprig} alt="" className={STORY_CLASS.leaf} />
+      <h1 className={STORY_CLASS.title}>{OUR_STORY_TITLE}</h1>
+      <p className={STORY_CLASS.subhead}>{OUR_STORY_SUBHEAD}</p>
 
-      <div className={STORY_CLASS.paragraphs}>
-        {OUR_STORY_PARAGRAPHS.map((paragraph) => (
-          <p key={paragraph}>{paragraph}</p>
+      {OUR_STORY_PARAGRAPHS.map((paragraph) => (
+        <p key={paragraph} className={STORY_CLASS.body}>
+          {paragraph}
+        </p>
+      ))}
+
+      <div className={STORY_CLASS.actions}>
+        {OUR_STORY_LINKS.map((link) => (
+          <Link key={link.href} to={link.href} className={link.filled ? STORY_CLASS.filled : STORY_CLASS.outline}>
+            {link.label}
+          </Link>
         ))}
       </div>
-
-      <Link to="/quiz" className={STORY_CLASS.quiz}>
-        {OUR_STORY_QUIZ_LABEL}
-      </Link>
 
       <section className={STORY_CLASS.questions}>
         <h2 className={STORY_CLASS.questionsHeading}>{OUR_STORY_QUESTIONS_HEADING}</h2>
