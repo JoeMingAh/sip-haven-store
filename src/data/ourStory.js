@@ -58,8 +58,13 @@ export const STORY_CLASS = {
     'inline-flex min-h-12 items-center rounded-full border-2 border-sage-deep px-7 text-base font-semibold text-sage-deep hover:bg-sage-tint',
   questions: 'mt-16 md:mt-24',
   questionsHeading: 'font-serif text-lg font-semibold text-sage-deep',
-  question: 'mt-8 font-serif text-base font-semibold leading-snug',
-  answer: 'mt-2 text-pretty leading-relaxed',
+  faqList: 'mt-4 divide-y divide-wood',
+  faqItem: 'group',
+  summary:
+    'flex cursor-pointer list-none items-center justify-between gap-4 py-4 [&::-webkit-details-marker]:hidden',
+  question: 'font-serif text-base font-semibold leading-snug',
+  chevron: 'h-4 w-4 shrink-0 text-sage-deep motion-safe:transition-transform motion-safe:duration-200 group-open:rotate-180',
+  answer: 'pb-4 text-pretty leading-relaxed',
 };
 
 // Ids shared by the built HTML and the page, so client navigation does not add a second copy.

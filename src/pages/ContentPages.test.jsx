@@ -117,10 +117,25 @@ describe('Our story', () => {
       'What does Sip Haven sell?',
       'How do I pick a tea or coffee?',
     ]);
-    // The answers are on the page, not tucked into a control that needs JavaScript.
-    expect(main().queryByRole('button')).not.toBeInTheDocument();
-    expect(screen.getByRole('main').querySelector('details')).toBeNull();
+    // Closed until opened, but the answers are in the page, not added by a script.
+    const items = [...screen.getByRole('main').querySelectorAll('details')];
+    expect(items).toHaveLength(3);
+    expect(items.every((item) => item.open)).toBe(false);
+    expect(screen.getByRole('main').querySelectorAll('summary')).toHaveLength(3);
     expect(screen.getByRole('main').querySelector('blockquote')).toBeNull();
+  });
+
+  it('opens a question without removing its answer from the page', () => {
+    renderAt('/our-story');
+    const item = [...screen.getByRole('main').querySelectorAll('details')].find((details) =>
+      details.querySelector('summary').textContent.includes('What is Sip Haven?'),
+    );
+    item.querySelector('summary').click();
+    expect(item.open).toBe(true);
+    expect(item).toHaveTextContent(
+      'Sip Haven is an online tea and coffee store. We make tea and coffee for slow mornings, long talks and quiet moments to look back on.',
+    );
+    expect(mainText()).toContain("Leave your email and we'll let you know when it's ready.");
   });
 
   it('states no facts that nobody has given us: no number, year, farm, award or founder', () => {

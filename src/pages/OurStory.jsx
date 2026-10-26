@@ -72,12 +72,26 @@ export default function OurStory() {
 
       <section className={STORY_CLASS.questions}>
         <h2 className={STORY_CLASS.questionsHeading}>{OUR_STORY_QUESTIONS_HEADING}</h2>
-        {OUR_STORY_FAQS.map((faq) => (
-          <div key={faq.question}>
-            <h3 className={STORY_CLASS.question}>{faq.question}</h3>
-            <p className={STORY_CLASS.answer}>{faq.answer}</p>
-          </div>
-        ))}
+        <div className={STORY_CLASS.faqList}>
+          {OUR_STORY_FAQS.map((faq) => (
+            <details key={faq.question} className={STORY_CLASS.faqItem}>
+              <summary className={STORY_CLASS.summary}>
+                <h3 className={STORY_CLASS.question}>{faq.question}</h3>
+                <svg aria-hidden="true" viewBox="0 0 20 20" className={STORY_CLASS.chevron}>
+                  <path
+                    d="M5 7.5 10 12.5 15 7.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </summary>
+              <p className={STORY_CLASS.answer}>{faq.answer}</p>
+            </details>
+          ))}
+        </div>
       </section>
     </div>
   );
