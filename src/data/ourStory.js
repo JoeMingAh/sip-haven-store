@@ -4,42 +4,19 @@
 import { DEFAULT_SITE_URL } from '../../lib/site-url.js';
 import { PAGE_META } from './pageMeta.js';
 
-// The approved story, split so the page can give each part its own pace. Joining a
-// block with a space rebuilds the paragraph Joseph approved. The three `label`
-// values are the only words added for the layout.
+// One column of copy. The headline is the only large line. The button label is the
+// only other new word on the page.
 export const OUR_STORY_EYEBROW = 'Our story';
 
 export const OUR_STORY_HEADLINE = 'Sip Haven is a place to slow down and remember.';
 
-export const OUR_STORY_INTRO =
-  "Life is a sum of all your experiences. Most days we're too busy living them to notice.";
-
-export const OUR_STORY_QUOTE =
-  'A good cup gives you a reason to stop, take a breath and let it all catch up with you.';
-
-export const OUR_STORY_SECTIONS = [
-  {
-    label: 'A quiet corner',
-    text: "That's what we want Sip Haven to feel like: a quiet corner where the kettle is always on and there's time to look back.",
-    moments: [
-      'A mug of coffee before the house wakes up, thinking about yesterday.',
-      'A pot of loose-leaf tea on a Sunday afternoon, remembering a trip, an old friend or a moment you almost forgot.',
-    ],
-  },
-  {
-    label: 'Why tea and coffee',
-    text: "We love tea and coffee for the same reason. Both turn an ordinary moment into a little ritual, and the best rituals leave you grateful for how far you've come.",
-  },
-  {
-    label: "What we're brewing",
-    text: "We're building a collection of loose-leaf tea, tea bags, tea K-Cups, and whole bean and ground coffee for those pauses. Pull up a chair, pour a cup and take a look around.",
-  },
+export const OUR_STORY_PARAGRAPHS = [
+  'Life is a sum of all your experiences. A good cup gives you a reason to stop, take a breath and let it all catch up with you.',
+  "A mug of coffee before the house wakes up. A pot of loose-leaf tea on a Sunday afternoon. Small rituals that leave you grateful for how far you've come.",
+  "We're building a collection of loose-leaf tea, tea bags, tea K-Cups, and whole bean and ground coffee for those pauses.",
 ];
 
-export const OUR_STORY_CTA = {
-  prompt: 'Not sure where to start?',
-  link: "Try the quiz and we'll point you toward a cup you might like.",
-};
+export const OUR_STORY_QUIZ_LABEL = 'Take the quiz';
 
 export const OUR_STORY_QUESTIONS_HEADING = 'Questions';
 
@@ -62,26 +39,17 @@ export const OUR_STORY_FAQS = [
 ];
 
 // The same classes the React page uses, so the static copy is styled if it shows.
-// Text blocks use max-w-prose (65 characters) so a line stays in the 60 to 70 range.
+// max-w-prose is 65 characters. The button is the only filled color on the page.
 export const STORY_CLASS = {
-  page: 'mx-auto w-full max-w-3xl px-4 py-14 md:py-20',
-  measure: 'mx-auto max-w-prose',
-  hero: 'mx-auto max-w-prose text-center',
+  page: 'mx-auto w-full max-w-prose px-4 py-16 md:py-24',
   eyebrow: 'text-xs font-semibold uppercase tracking-wider text-sage-deep',
   headline: 'mt-3 text-balance font-serif text-4xl font-semibold leading-tight text-sage-deep md:text-5xl',
-  intro: 'mt-6 text-pretty text-xl leading-relaxed',
-  quote: 'mx-auto my-16 max-w-prose border-y border-wood py-10 text-balance text-center font-serif text-2xl leading-snug text-sage-deep md:my-24 md:py-14 md:text-3xl',
-  section: 'mt-16 md:mt-24',
-  label: 'font-sans text-xs font-semibold uppercase tracking-wider text-sage-deep',
-  body: 'mt-4 text-pretty text-lg leading-relaxed',
-  moments: 'mt-8 grid gap-6 border-t border-wood pt-8 md:grid-cols-2 md:gap-0 md:divide-x md:divide-wood',
-  momentFirst: 'text-pretty text-lg leading-relaxed md:pr-8',
-  momentSecond: 'border-t border-wood pt-6 text-pretty text-lg leading-relaxed md:border-t-0 md:pt-0 md:pl-8',
-  cta: 'mt-16 rounded-3xl bg-sage-tint px-6 py-10 text-center md:mt-24 md:px-12 md:py-14',
-  ctaPrompt: 'text-balance font-serif text-2xl font-semibold text-sage-deep md:text-3xl',
-  ctaLink: 'mx-auto mt-6 inline-flex w-full max-w-md items-center justify-center rounded-3xl bg-sage-deep px-7 py-4 text-center text-base font-semibold leading-snug text-cream hover:bg-ink',
-  question: 'mt-8 font-serif text-xl font-semibold leading-snug text-sage-deep',
-  answer: 'mt-3 text-pretty text-lg leading-relaxed',
+  paragraphs: 'mt-10 space-y-6 text-pretty text-lg leading-relaxed',
+  quiz: 'mt-10 inline-flex min-h-12 items-center rounded-full bg-sage-deep px-7 text-base font-semibold text-cream hover:bg-ink',
+  questions: 'mt-20 md:mt-28',
+  questionsHeading: 'font-serif text-lg font-semibold text-sage-deep',
+  question: 'mt-8 font-serif text-base font-semibold leading-snug',
+  answer: 'mt-2 text-pretty leading-relaxed',
 };
 
 // Ids shared by the built HTML and the page, so client navigation does not add a second copy.

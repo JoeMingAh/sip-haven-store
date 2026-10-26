@@ -3,14 +3,12 @@ import { Link } from 'react-router-dom';
 import {
   FAQ_JSON_LD_ID,
   ORGANIZATION_JSON_LD_ID,
-  OUR_STORY_CTA,
   OUR_STORY_EYEBROW,
   OUR_STORY_FAQS,
   OUR_STORY_HEADLINE,
-  OUR_STORY_INTRO,
+  OUR_STORY_PARAGRAPHS,
   OUR_STORY_QUESTIONS_HEADING,
-  OUR_STORY_QUOTE,
-  OUR_STORY_SECTIONS,
+  OUR_STORY_QUIZ_LABEL,
   STORY_CLASS,
   ourStoryStructuredData,
 } from '../data/ourStory.js';
@@ -43,57 +41,30 @@ function StoryJsonLd() {
 }
 
 /**
- * /our-story. Approved copy (src/data/ourStory.js), set in a quiet sequence:
- * a short opening, a pull quote, three labeled sections, a quiz panel, then
- * the questions. The build writes the same words into our-story.html.
+ * /our-story. One column: the headline, three paragraphs, one button, then the
+ * questions. Copy lives in src/data/ourStory.js. The build writes the same words
+ * into our-story.html.
  */
 export default function OurStory() {
-  const [quietCorner, ...rest] = OUR_STORY_SECTIONS;
-
   return (
     <div className={STORY_CLASS.page}>
       <StoryJsonLd />
 
-      <div className={STORY_CLASS.hero}>
-        <p className={STORY_CLASS.eyebrow}>{OUR_STORY_EYEBROW}</p>
-        <h1 className={STORY_CLASS.headline}>{OUR_STORY_HEADLINE}</h1>
-        <p className={STORY_CLASS.intro}>{OUR_STORY_INTRO}</p>
+      <p className={STORY_CLASS.eyebrow}>{OUR_STORY_EYEBROW}</p>
+      <h1 className={STORY_CLASS.headline}>{OUR_STORY_HEADLINE}</h1>
+
+      <div className={STORY_CLASS.paragraphs}>
+        {OUR_STORY_PARAGRAPHS.map((paragraph) => (
+          <p key={paragraph}>{paragraph}</p>
+        ))}
       </div>
 
-      <blockquote className={STORY_CLASS.quote}>
-        <p>{OUR_STORY_QUOTE}</p>
-      </blockquote>
+      <Link to="/quiz" className={STORY_CLASS.quiz}>
+        {OUR_STORY_QUIZ_LABEL}
+      </Link>
 
-      <section className={STORY_CLASS.section}>
-        <div className={STORY_CLASS.measure}>
-          <h2 className={STORY_CLASS.label}>{quietCorner.label}</h2>
-          <p className={STORY_CLASS.body}>{quietCorner.text}</p>
-        </div>
-        <div className={STORY_CLASS.moments}>
-          {quietCorner.moments.map((line, index) => (
-            <p key={line} className={index === 0 ? STORY_CLASS.momentFirst : STORY_CLASS.momentSecond}>
-              {line}
-            </p>
-          ))}
-        </div>
-      </section>
-
-      {rest.map((section) => (
-        <section key={section.label} className={`${STORY_CLASS.section} ${STORY_CLASS.measure}`}>
-          <h2 className={STORY_CLASS.label}>{section.label}</h2>
-          <p className={STORY_CLASS.body}>{section.text}</p>
-        </section>
-      ))}
-
-      <section className={STORY_CLASS.cta}>
-        <h2 className={STORY_CLASS.ctaPrompt}>{OUR_STORY_CTA.prompt}</h2>
-        <Link to="/quiz" className={STORY_CLASS.ctaLink}>
-          {OUR_STORY_CTA.link}
-        </Link>
-      </section>
-
-      <section className={`${STORY_CLASS.section} ${STORY_CLASS.measure}`}>
-        <h2 className={STORY_CLASS.label}>{OUR_STORY_QUESTIONS_HEADING}</h2>
+      <section className={STORY_CLASS.questions}>
+        <h2 className={STORY_CLASS.questionsHeading}>{OUR_STORY_QUESTIONS_HEADING}</h2>
         {OUR_STORY_FAQS.map((faq) => (
           <div key={faq.question}>
             <h3 className={STORY_CLASS.question}>{faq.question}</h3>

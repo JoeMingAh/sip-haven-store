@@ -71,13 +71,6 @@ describe.each(PAGES)('$path', ({ path, title }) => {
   it('keeps its text to a readable width', () => {
     renderAt(path);
     const root = screen.getByRole('main').firstElementChild;
-    // Our Story is a little wider so two short lines can sit side by side. The
-    // paragraphs themselves stay on the prose measure (about 65 characters).
-    if (path === '/our-story') {
-      expect(root).toHaveClass('max-w-3xl');
-      expect(root.querySelectorAll('.max-w-prose').length).toBeGreaterThan(0);
-      return;
-    }
     expect(root).toHaveClass('max-w-prose');
   });
 
@@ -91,18 +84,11 @@ describe('Our story', () => {
   const APPROVED = [
     'Our story',
     'Sip Haven is a place to slow down and remember.',
-    "Life is a sum of all your experiences. Most days we're too busy living them to notice.",
-    'A good cup gives you a reason to stop, take a breath and let it all catch up with you.',
-    'A quiet corner',
-    "That's what we want Sip Haven to feel like: a quiet corner where the kettle is always on and there's time to look back.",
-    'A mug of coffee before the house wakes up, thinking about yesterday.',
-    'A pot of loose-leaf tea on a Sunday afternoon, remembering a trip, an old friend or a moment you almost forgot.',
-    'Why tea and coffee',
-    "We love tea and coffee for the same reason. Both turn an ordinary moment into a little ritual, and the best rituals leave you grateful for how far you've come.",
-    "What we're brewing",
-    "We're building a collection of loose-leaf tea, tea bags, tea K-Cups, and whole bean and ground coffee for those pauses. Pull up a chair, pour a cup and take a look around.",
-    'Not sure where to start?',
-    "Try the quiz and we'll point you toward a cup you might like.",
+    'Life is a sum of all your experiences. A good cup gives you a reason to stop, take a breath and let it all catch up with you.',
+    "A mug of coffee before the house wakes up. A pot of loose-leaf tea on a Sunday afternoon. Small rituals that leave you grateful for how far you've come.",
+    "We're building a collection of loose-leaf tea, tea bags, tea K-Cups, and whole bean and ground coffee for those pauses.",
+    'Take the quiz',
+    'Questions',
     'What is Sip Haven?',
     'Sip Haven is an online tea and coffee store. We make tea and coffee for slow mornings, long talks and quiet moments to look back on.',
     'What does Sip Haven sell?',
@@ -121,10 +107,6 @@ describe('Our story', () => {
         .map((heading) => heading.textContent),
     ).toEqual([
       'Sip Haven is a place to slow down and remember.',
-      'A quiet corner',
-      'Why tea and coffee',
-      "What we're brewing",
-      'Not sure where to start?',
       'Questions',
       'What is Sip Haven?',
       'What does Sip Haven sell?',
@@ -133,9 +115,7 @@ describe('Our story', () => {
     // The answers are on the page, not tucked into a control that needs JavaScript.
     expect(main().queryByRole('button')).not.toBeInTheDocument();
     expect(screen.getByRole('main').querySelector('details')).toBeNull();
-    expect(screen.getByRole('main').querySelector('blockquote')).toHaveTextContent(
-      'A good cup gives you a reason to stop, take a breath and let it all catch up with you.',
-    );
+    expect(screen.getByRole('main').querySelector('blockquote')).toBeNull();
   });
 
   it('states no facts that nobody has given us: no number, year, farm, award or founder', () => {
@@ -145,24 +125,14 @@ describe('Our story', () => {
     expect(mainText()).not.toMatch(/farm|award|founder|founded|customers/i);
   });
 
-  it('links the quiz line to the quiz, in the filled-button colors', () => {
+  it('links Take the quiz to the quiz, and that link is the only filled button', () => {
     renderAt('/our-story');
-    const quiz = main().getByRole('link', {
-      name: "Try the quiz and we'll point you toward a cup you might like.",
-    });
+    const quiz = main().getByRole('link', { name: 'Take the quiz' });
     expect(quiz).toHaveAttribute('href', '/quiz');
-    expect(quiz).toHaveClass('bg-sage-deep', 'text-cream');
-    expect(main().queryByRole('link', { name: 'Take the quiz' })).not.toBeInTheDocument();
-  });
-
-  it('sets the two moments side by side from the md breakpoint, stacked below it', () => {
-    renderAt('/our-story');
-    const moments = screen.getByRole('main').querySelector('.md\\:grid-cols-2');
-    expect(moments).not.toBeNull();
-    expect(moments).toHaveTextContent('A mug of coffee before the house wakes up, thinking about yesterday.');
-    expect(moments).toHaveTextContent(
-      'A pot of loose-leaf tea on a Sunday afternoon, remembering a trip, an old friend or a moment you almost forgot.',
-    );
+    expect(quiz).toHaveClass('bg-sage-deep', 'text-cream', 'rounded-full');
+    expect(main().getAllByRole('link')).toHaveLength(1);
+    expect(screen.getByRole('main').querySelector('[class*="bg-sage-tint"]')).toBeNull();
+    expect(screen.getByRole('main').querySelector('[class*="border-"]')).toBeNull();
   });
 
   it('adds Organization and FAQPage structured data, and takes it away on leaving', async () => {
