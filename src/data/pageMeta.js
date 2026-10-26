@@ -39,9 +39,9 @@ export const PAGE_META = {
       'Answer six quick questions about mood, caffeine, flavor and aroma, and we will point you toward a Sip Haven tea or coffee you might love.',
   },
   '/our-story': {
-    title: 'Our story | Sip Haven',
+    title: 'Our Story | Sip Haven Tea and Coffee',
     description:
-      'Why we started Sip Haven: a quiet corner where the kettle is always on, and a collection of teas and coffees for slow mornings and long talks.',
+      'Sip Haven is an online tea and coffee store for slow mornings and quiet moments. Loose-leaf tea, K-Cups, and whole bean and ground coffee.',
   },
   '/contact': {
     title: 'Contact us | Sip Haven',
