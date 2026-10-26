@@ -1,63 +1,76 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { leafSprig } from '../assets/placeholders/index.js';
+import {
+  FAQ_JSON_LD_ID,
+  ORGANIZATION_JSON_LD_ID,
+  OUR_STORY_FAQS,
+  OUR_STORY_LEAD,
+  OUR_STORY_PARAGRAPHS,
+  OUR_STORY_QUESTIONS_HEADING,
+  OUR_STORY_QUIZ,
+  OUR_STORY_TITLE,
+  STORY_CLASS,
+  ourStoryStructuredData,
+} from '../data/ourStory.js';
 
-// Filled buttons use sage-deep behind cream text, which is the pairing that passes
-// WCAG AA (see tailwind.config.js); plain sage stays for accents.
-const FILLED_BUTTON =
-  'inline-flex min-h-12 items-center rounded-full bg-sage-deep px-7 text-base font-semibold text-cream hover:bg-ink';
-const OUTLINE_BUTTON =
-  'inline-flex min-h-12 items-center rounded-full border-2 border-sage-deep px-7 text-base font-semibold text-sage-deep hover:bg-sage-tint';
-
-const BODY = 'mt-5 text-pretty text-lg leading-relaxed';
+// Puts the same JSON-LD the build writes into our-story.html into the head when a
+// visitor opens this page without a full load (from another page). Removes it on
+// the way out, so the rest of the shop does not carry the story's structured data.
+function StoryJsonLd() {
+  useEffect(() => {
+    const { organization, faqPage } = ourStoryStructuredData();
+    const scripts = [
+      [ORGANIZATION_JSON_LD_ID, organization],
+      [FAQ_JSON_LD_ID, faqPage],
+    ].map(([id, data]) => {
+      let script = document.getElementById(id);
+      if (!script) {
+        script = document.createElement('script');
+        script.id = id;
+        script.type = 'application/ld+json';
+        document.head.append(script);
+      }
+      script.textContent = JSON.stringify(data);
+      return script;
+    });
+    return () => {
+      for (const script of scripts) script.remove();
+    };
+  }, []);
+  return null;
+}
 
 /**
- * /our-story. A short welcome: Sip Haven as a place to slow down with tea and coffee.
- *
- * It states no history, numbers or sources, because none have been given to us: not
- * when Sip Haven began, where anything is sourced, any prize or press, who started it
- * or how many people buy from it. Add any of those only when Joseph supplies them.
+ * /our-story. Approved copy (src/data/ourStory.js). The build also writes these
+ * words into our-story.html for crawlers that do not run JavaScript.
  */
 export default function OurStory() {
   return (
-    <div className="mx-auto max-w-prose px-4 py-10 md:py-14">
-      {/* DRAFT COPY: needs Joseph's approval */}
-      <img src={leafSprig} alt="" className="h-16 w-16" />
-      <h1 className="mt-4 text-balance font-serif text-4xl font-semibold leading-tight text-sage-deep md:text-5xl">
-        Our story
-      </h1>
-      <p className="mt-4 text-pretty font-serif text-2xl leading-snug">
-        Sip Haven is a place to slow down.
-      </p>
-
-      <p className={BODY}>
-        A good cup is a small way to pause. It gives you a reason to sit down, take a breath and
-        let the day catch up with you. That is what we want Sip Haven to feel like: a quiet corner
-        where the kettle is always on.
-      </p>
-      <p className={BODY}>
-        We love tea and coffee for the same reason. Both turn an ordinary moment into a little
-        ritual, whether that is a pot of loose-leaf tea on a Sunday afternoon or a mug of coffee
-        before the house wakes up.
-      </p>
-      <p className={BODY}>
-        We're building a collection of teas and coffees for slow mornings, long talks and
-        everything in between. Pull up a chair and take a look around.
-      </p>
-      <p className={BODY}>
-        Not sure where to start? Try the quiz and we'll point you toward a cup you might like.
-      </p>
-
-      <div className="mt-8 flex flex-wrap gap-3">
-        <Link to="/quiz" className={FILLED_BUTTON}>
-          Take the quiz
+    <div className={STORY_CLASS.page}>
+      <StoryJsonLd />
+      <img src={leafSprig} alt="" className={STORY_CLASS.image} />
+      <h1 className={STORY_CLASS.title}>{OUR_STORY_TITLE}</h1>
+      <p className={STORY_CLASS.lead}>{OUR_STORY_LEAD}</p>
+      {OUR_STORY_PARAGRAPHS.map((paragraph) => (
+        <p key={paragraph} className={STORY_CLASS.body}>
+          {paragraph}
+        </p>
+      ))}
+      <p className={STORY_CLASS.body}>
+        {OUR_STORY_QUIZ.before}
+        <Link to="/quiz" className={STORY_CLASS.link}>
+          {OUR_STORY_QUIZ.link}
         </Link>
-        <Link to="/tea" className={OUTLINE_BUTTON}>
-          Browse tea
-        </Link>
-        <Link to="/coffee" className={OUTLINE_BUTTON}>
-          Browse coffee
-        </Link>
-      </div>
+        {OUR_STORY_QUIZ.after}
+      </p>
+      <h2 className={STORY_CLASS.section}>{OUR_STORY_QUESTIONS_HEADING}</h2>
+      {OUR_STORY_FAQS.map((faq) => (
+        <section key={faq.question}>
+          <h3 className={STORY_CLASS.question}>{faq.question}</h3>
+          <p className={STORY_CLASS.body}>{faq.answer}</p>
+        </section>
+      ))}
     </div>
   );
 }

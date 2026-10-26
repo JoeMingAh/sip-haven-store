@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { routes } from '../router.jsx';
 
@@ -80,11 +80,31 @@ describe.each(PAGES)('$path', ({ path, title }) => {
 });
 
 describe('Our story', () => {
-  it('welcomes the visitor and calls Sip Haven a place to slow down', () => {
+  const APPROVED = [
+    'Sip Haven is a place to slow down and remember.',
+    "Life is a sum of all your experiences. Most days we're too busy living them to notice. A good cup gives you a reason to stop, take a breath and let it all catch up with you.",
+    "That's what we want Sip Haven to feel like: a quiet corner where the kettle is always on and there's time to look back. A mug of coffee before the house wakes up, thinking about yesterday. A pot of loose-leaf tea on a Sunday afternoon, remembering a trip, an old friend or a moment you almost forgot.",
+    "We love tea and coffee for the same reason. Both turn an ordinary moment into a little ritual, and the best rituals leave you grateful for how far you've come.",
+    "We're building a collection of loose-leaf tea, tea bags, tea K-Cups, and whole bean and ground coffee for those pauses. Pull up a chair, pour a cup and take a look around.",
+    "Not sure where to start? Try the quiz and we'll point you toward a cup you might like.",
+    'What is Sip Haven?',
+    'Sip Haven is an online tea and coffee store. We make tea and coffee for slow mornings, long talks and quiet moments to look back on.',
+    'What does Sip Haven sell?',
+    "Loose-leaf tea, tea bags and tea K-Cups, plus whole bean and ground coffee. Our first collection is on the way. Leave your email and we'll let you know when it's ready.",
+    'How do I pick a tea or coffee?',
+    "Take our quick quiz. Answer a few questions and we'll point you toward a cup you might love.",
+  ];
+
+  it('shows the approved story, with the questions as headings and the answers as text', () => {
     renderAt('/our-story');
-    expect(mainText()).toMatch(/slow down/i);
-    expect(mainText()).toMatch(/tea/i);
-    expect(mainText()).toMatch(/coffee/i);
+    for (const text of APPROVED) expect(mainText()).toContain(text);
+    expect(main().getByRole('heading', { level: 2, name: 'Questions' })).toBeInTheDocument();
+    expect(main().getByRole('heading', { level: 3, name: 'What is Sip Haven?' })).toBeInTheDocument();
+    expect(main().getByRole('heading', { level: 3, name: 'What does Sip Haven sell?' })).toBeInTheDocument();
+    expect(main().getByRole('heading', { level: 3, name: 'How do I pick a tea or coffee?' })).toBeInTheDocument();
+    // The answers are on the page, not tucked into a control that needs JavaScript.
+    expect(main().queryByRole('button')).not.toBeInTheDocument();
+    expect(screen.getByRole('main').querySelector('details')).toBeNull();
   });
 
   it('states no facts that nobody has given us: no number, year, farm, award or founder', () => {
@@ -94,17 +114,40 @@ describe('Our story', () => {
     expect(mainText()).not.toMatch(/farm|award|founder|founded|customers/i);
   });
 
-  it('leads on to the quiz, tea and coffee, so the page is not a dead end', () => {
+  it('links the quiz line to the quiz', () => {
     renderAt('/our-story');
-    expect(main().getByRole('link', { name: 'Take the quiz' })).toHaveAttribute('href', '/quiz');
-    expect(main().getByRole('link', { name: 'Browse tea' })).toHaveAttribute('href', '/tea');
-    expect(main().getByRole('link', { name: 'Browse coffee' })).toHaveAttribute('href', '/coffee');
+    expect(main().getByRole('link', { name: 'the quiz' })).toHaveAttribute('href', '/quiz');
+    expect(main().queryByRole('link', { name: 'Take the quiz' })).not.toBeInTheDocument();
   });
 
-  it('uses the filled-button look that passes contrast: sage-deep behind cream text', () => {
+  it('keeps the leaf, and gives the quiz link the same treatment as other text links', () => {
     renderAt('/our-story');
-    const filled = main().getByRole('link', { name: 'Take the quiz' });
-    expect(filled).toHaveClass('bg-sage-deep', 'text-cream');
+    const image = screen.getByRole('main').querySelector('img');
+    expect(image).toHaveAttribute('alt', '');
+    expect(image).toHaveClass('h-16', 'w-16');
+    expect(main().getByRole('link', { name: 'the quiz' })).toHaveClass(
+      'font-semibold',
+      'text-sage-deep',
+      'underline',
+    );
+  });
+
+  it('adds Organization and FAQPage structured data, and takes it away on leaving', async () => {
+    const router = renderAt('/our-story');
+    const organization = document.getElementById('sip-haven-organization-jsonld');
+    const faq = document.getElementById('sip-haven-faqpage-jsonld');
+    expect(JSON.parse(organization.textContent)).toMatchObject({
+      '@type': 'Organization',
+      name: 'Sip Haven',
+      legalName: 'Sip Haven Co. LLC',
+      url: 'https://www.siphaven.com',
+    });
+    expect(JSON.parse(faq.textContent).mainEntity).toHaveLength(3);
+    expect(faq.textContent).toContain('What is Sip Haven?');
+
+    await act(() => router.navigate('/contact'));
+    expect(document.getElementById('sip-haven-organization-jsonld')).toBeNull();
+    expect(document.getElementById('sip-haven-faqpage-jsonld')).toBeNull();
   });
 });
 
