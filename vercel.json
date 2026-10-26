@@ -6,17 +6,17 @@
   },
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/tea", "destination": "/index.html" },
-    { "source": "/coffee", "destination": "/index.html" },
-    { "source": "/products/:slug", "destination": "/index.html" },
-    { "source": "/quiz", "destination": "/index.html" },
-    { "source": "/learn", "destination": "/index.html" },
-    { "source": "/learn/:slug", "destination": "/index.html" },
-    { "source": "/our-story", "destination": "/index.html" },
-    { "source": "/contact", "destination": "/index.html" },
-    { "source": "/shipping-returns", "destination": "/index.html" },
-    { "source": "/privacy", "destination": "/index.html" },
-    { "source": "/success", "destination": "/index.html" },
-    { "source": "/cart", "destination": "/index.html" }
+    { "source": "/tea", "destination": "/tea.html" },
+    { "source": "/coffee", "destination": "/coffee.html" },
+    { "source": "/products/:slug", "destination": "/app.html" },
+    { "source": "/quiz", "destination": "/quiz.html" },
+    { "source": "/learn", "destination": "/app.html" },
+    { "source": "/learn/:slug", "destination": "/app.html" },
+    { "source": "/our-story", "destination": "/our-story.html" },
+    { "source": "/contact", "destination": "/contact.html" },
+    { "source": "/shipping-returns", "destination": "/shipping-returns.html" },
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/success", "destination": "/app.html" },
+    { "source": "/cart", "destination": "/app.html" }
   ]
 }
