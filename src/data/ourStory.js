@@ -4,22 +4,41 @@
 import { DEFAULT_SITE_URL } from '../../lib/site-url.js';
 import { PAGE_META } from './pageMeta.js';
 
-export const OUR_STORY_TITLE = 'Our story';
+// The approved story, split so the page can give each part its own pace. Joining a
+// block with a space rebuilds the paragraph Joseph approved. The three `label`
+// values are the only words added for the layout.
+export const OUR_STORY_EYEBROW = 'Our story';
 
-export const OUR_STORY_LEAD = 'Sip Haven is a place to slow down and remember.';
+export const OUR_STORY_HEADLINE = 'Sip Haven is a place to slow down and remember.';
 
-export const OUR_STORY_PARAGRAPHS = [
-  "Life is a sum of all your experiences. Most days we're too busy living them to notice. A good cup gives you a reason to stop, take a breath and let it all catch up with you.",
-  "That's what we want Sip Haven to feel like: a quiet corner where the kettle is always on and there's time to look back. A mug of coffee before the house wakes up, thinking about yesterday. A pot of loose-leaf tea on a Sunday afternoon, remembering a trip, an old friend or a moment you almost forgot.",
-  "We love tea and coffee for the same reason. Both turn an ordinary moment into a little ritual, and the best rituals leave you grateful for how far you've come.",
-  "We're building a collection of loose-leaf tea, tea bags, tea K-Cups, and whole bean and ground coffee for those pauses. Pull up a chair, pour a cup and take a look around.",
+export const OUR_STORY_INTRO =
+  "Life is a sum of all your experiences. Most days we're too busy living them to notice.";
+
+export const OUR_STORY_QUOTE =
+  'A good cup gives you a reason to stop, take a breath and let it all catch up with you.';
+
+export const OUR_STORY_SECTIONS = [
+  {
+    label: 'A quiet corner',
+    text: "That's what we want Sip Haven to feel like: a quiet corner where the kettle is always on and there's time to look back.",
+    moments: [
+      'A mug of coffee before the house wakes up, thinking about yesterday.',
+      'A pot of loose-leaf tea on a Sunday afternoon, remembering a trip, an old friend or a moment you almost forgot.',
+    ],
+  },
+  {
+    label: 'Why tea and coffee',
+    text: "We love tea and coffee for the same reason. Both turn an ordinary moment into a little ritual, and the best rituals leave you grateful for how far you've come.",
+  },
+  {
+    label: "What we're brewing",
+    text: "We're building a collection of loose-leaf tea, tea bags, tea K-Cups, and whole bean and ground coffee for those pauses. Pull up a chair, pour a cup and take a look around.",
+  },
 ];
 
-// "the quiz" is the link to /quiz. The sentence on the page is before + link + after.
-export const OUR_STORY_QUIZ = {
-  before: 'Not sure where to start? Try ',
-  link: 'the quiz',
-  after: " and we'll point you toward a cup you might like.",
+export const OUR_STORY_CTA = {
+  prompt: 'Not sure where to start?',
+  link: "Try the quiz and we'll point you toward a cup you might like.",
 };
 
 export const OUR_STORY_QUESTIONS_HEADING = 'Questions';
@@ -43,15 +62,26 @@ export const OUR_STORY_FAQS = [
 ];
 
 // The same classes the React page uses, so the static copy is styled if it shows.
+// Text blocks use max-w-prose (65 characters) so a line stays in the 60 to 70 range.
 export const STORY_CLASS = {
-  page: 'mx-auto max-w-prose px-4 py-10 md:py-14',
-  image: 'h-16 w-16',
-  title: 'mt-4 text-balance font-serif text-4xl font-semibold leading-tight text-sage-deep md:text-5xl',
-  lead: 'mt-4 text-pretty font-serif text-2xl leading-snug',
-  body: 'mt-5 text-pretty text-lg leading-relaxed',
-  section: 'mt-10 font-serif text-2xl font-semibold text-sage-deep',
-  question: 'mt-8 font-serif text-xl font-semibold text-sage-deep',
-  link: 'font-semibold text-sage-deep underline underline-offset-4 hover:no-underline',
+  page: 'mx-auto w-full max-w-3xl px-4 py-14 md:py-20',
+  measure: 'mx-auto max-w-prose',
+  hero: 'mx-auto max-w-prose text-center',
+  eyebrow: 'text-xs font-semibold uppercase tracking-wider text-sage-deep',
+  headline: 'mt-3 text-balance font-serif text-4xl font-semibold leading-tight text-sage-deep md:text-5xl',
+  intro: 'mt-6 text-pretty text-xl leading-relaxed',
+  quote: 'mx-auto my-16 max-w-prose border-y border-wood py-10 text-balance text-center font-serif text-2xl leading-snug text-sage-deep md:my-24 md:py-14 md:text-3xl',
+  section: 'mt-16 md:mt-24',
+  label: 'font-sans text-xs font-semibold uppercase tracking-wider text-sage-deep',
+  body: 'mt-4 text-pretty text-lg leading-relaxed',
+  moments: 'mt-8 grid gap-6 border-t border-wood pt-8 md:grid-cols-2 md:gap-0 md:divide-x md:divide-wood',
+  momentFirst: 'text-pretty text-lg leading-relaxed md:pr-8',
+  momentSecond: 'border-t border-wood pt-6 text-pretty text-lg leading-relaxed md:border-t-0 md:pt-0 md:pl-8',
+  cta: 'mt-16 rounded-3xl bg-sage-tint px-6 py-10 text-center md:mt-24 md:px-12 md:py-14',
+  ctaPrompt: 'text-balance font-serif text-2xl font-semibold text-sage-deep md:text-3xl',
+  ctaLink: 'mx-auto mt-6 inline-flex w-full max-w-md items-center justify-center rounded-3xl bg-sage-deep px-7 py-4 text-center text-base font-semibold leading-snug text-cream hover:bg-ink',
+  question: 'mt-8 font-serif text-xl font-semibold leading-snug text-sage-deep',
+  answer: 'mt-3 text-pretty text-lg leading-relaxed',
 };
 
 // Ids shared by the built HTML and the page, so client navigation does not add a second copy.
