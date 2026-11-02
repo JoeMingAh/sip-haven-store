@@ -11,6 +11,12 @@ afterEach(() => {
 });
 
 describe('FreeShippingProgress', () => {
+  it('is earned and full under the threshold when the cart ships free on its own', () => {
+    render(<FreeShippingProgress subtotalCents={4200} freeShipping />);
+    expect(screen.getByText("You've earned free shipping")).toBeInTheDocument();
+    expect(bar()).toHaveAttribute('aria-valuenow', String(FREE_SHIPPING_CENTS));
+  });
+
   it('reads "$10.00 away from free shipping" at a subtotal of 4000', () => {
     render(<FreeShippingProgress subtotalCents={4000} />);
     expect(screen.getByText('$10.00 away from free shipping')).toBeInTheDocument();

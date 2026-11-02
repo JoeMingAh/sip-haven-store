@@ -6,18 +6,21 @@ import { formatPrice } from '../format.js';
  * the subtotal nears FREE_SHIPPING_CENTS (lib/store-config.js). The bar reads as a
  * progress bar to a screen reader, with the same words as its value.
  *
+ * `freeShipping` says the cart already ships free whatever its subtotal (it holds a
+ * line that ships free on its own, like the Tasting Flight), so the bar is full.
+ *
  * The track is wood, which is only 1.23:1 on the cream cart, so it carries a sage
  * outline (3.7:1) to show its whole length, empty or not.
  */
-export default function FreeShippingProgress({ subtotalCents }) {
+export default function FreeShippingProgress({ subtotalCents, freeShipping = false }) {
   // Anything that is not a sensible amount counts as an empty cart.
   const subtotal = Number.isFinite(subtotalCents) ? Math.max(0, subtotalCents) : 0;
-  const earned = subtotal >= FREE_SHIPPING_CENTS;
+  const earned = freeShipping || subtotal >= FREE_SHIPPING_CENTS;
   const message = earned
     ? "You've earned free shipping"
     : `${formatPrice(FREE_SHIPPING_CENTS - subtotal)} away from free shipping`;
 
-  const progress = Math.min(subtotal, FREE_SHIPPING_CENTS);
+  const progress = earned ? FREE_SHIPPING_CENTS : Math.min(subtotal, FREE_SHIPPING_CENTS);
   // Rounded down, so the bar is never full before the shipping is earned.
   const percent = Math.floor((progress / FREE_SHIPPING_CENTS) * 100);
 

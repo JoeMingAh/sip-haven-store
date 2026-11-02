@@ -20,11 +20,13 @@ export class CheckoutError extends Error {
 
 /**
  * The cart, as { slug, variantId, qty } lines, turned into Stripe line items plus
- * its subtotal in cents. Every price comes from the lineup, never from the
- * browser. Throws a CheckoutError for the first line that cannot be sold.
+ * its subtotal in cents. Every price comes from the lineup (or lib/offers.js), never
+ * from the browser. Throws a CheckoutError for the first line that cannot be sold.
+ * `free_shipping` is true when a line ships free on its own (the Tasting Flight).
  */
 export function buildLineItems(items) {
   let subtotalCents = 0;
+  let freeShipping = false;
 
   const lineItems = items.map((item) => {
     const { slug, variantId, qty } = item ?? {};
@@ -42,18 +44,20 @@ export function buildLineItems(items) {
     }
 
     subtotalCents += found.variant.price_cents * qty;
+    if (found.variant.free_shipping === true) freeShipping = true;
     return { price: found.variant.stripe_price_id, quantity: qty };
   });
 
-  return { line_items: lineItems, subtotal_cents: subtotalCents };
+  return { line_items: lineItems, subtotal_cents: subtotalCents, free_shipping: freeShipping };
 }
 
 /**
  * The shipping choice Checkout offers for a cart worth `subtotalCents`: free from
  * FREE_SHIPPING_CENTS up, otherwise the flat rate. Both live in lib/store-config.js.
+ * `freeShipping` (a line that ships free on its own) makes it free at any subtotal.
  */
-export function shippingOptions(subtotalCents) {
-  const free = subtotalCents >= FREE_SHIPPING_CENTS;
+export function shippingOptions(subtotalCents, { freeShipping = false } = {}) {
+  const free = freeShipping || subtotalCents >= FREE_SHIPPING_CENTS;
   return [
     {
       shipping_rate_data: {
@@ -120,7 +124,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { line_items, subtotal_cents } = buildLineItems(items);
+    const { line_items, subtotal_cents, free_shipping } = buildLineItems(items);
 
     // After the cart check, so a bad cart is still a 400, and before the Stripe client,
     // so a site with nowhere to send the shopper back to never calls Stripe. If SITE_URL
@@ -135,7 +139,7 @@ export default async function handler(req, res) {
       automatic_tax: { enabled: true },
       allow_promotion_codes: true,
       shipping_address_collection: { allowed_countries: ['US'] },
-      shipping_options: shippingOptions(subtotal_cents),
+      shipping_options: shippingOptions(subtotal_cents, { freeShipping: free_shipping }),
       success_url: `${origin}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/cart`,
     });

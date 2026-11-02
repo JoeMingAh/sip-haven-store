@@ -150,7 +150,7 @@ function CartLine({ line, busy }) {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <Link
-              to={`/products/${product.slug}`}
+              to={product.path ?? `/products/${product.slug}`}
               className="font-serif text-lg font-semibold leading-snug text-sage-deep hover:underline"
             >
               {product.name}
@@ -206,6 +206,11 @@ function CartLine({ line, busy }) {
     </li>
   );
 }
+
+// Whether a line ships free on its own, whatever the subtotal (an offer with
+// free_shipping, like the Tasting Flight; see lib/offers.js). /api/checkout agrees.
+const shipsFree = (lines) =>
+  lines.some((line) => findVariant(line.slug, line.variantId)?.variant.free_shipping === true);
 
 // What a failed checkout was about: its text, and the cart it was about. When the
 // cart changes the text no longer applies and is not shown.
@@ -277,7 +282,7 @@ function CartSummary({ lines, subtotalCents, busy, onBusyChange }) {
 
   return (
     <div className="border-t border-wood px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4">
-      <FreeShippingProgress subtotalCents={subtotalCents} />
+      <FreeShippingProgress subtotalCents={subtotalCents} freeShipping={shipsFree(lines)} />
 
       <p className="mt-4 flex items-baseline justify-between text-lg font-semibold">
         <span>Subtotal</span> <span>{formatPrice(subtotalCents)}</span>
