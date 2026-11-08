@@ -75,9 +75,9 @@ describe('Learn: no guides yet', () => {
     expect(main().getByRole('link', { name: 'Browse coffee' })).toHaveAttribute('href', '/coffee');
   });
 
-  it('uses the loud call-to-action look: terracotta behind cream text', () => {
+  it('uses the loud call-to-action look: plum behind oat text', () => {
     renderAt('/learn');
-    expect(main().getByRole('link', { name: 'Take the quiz' })).toHaveClass('bg-terracotta', 'text-cream');
+    expect(main().getByRole('link', { name: 'Take the quiz' })).toHaveClass('bg-plum', 'text-cream');
   });
 
   it('has no price and nothing to add to a cart', () => {

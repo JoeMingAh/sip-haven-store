@@ -8,7 +8,7 @@ const dir = path.dirname(fileURLToPath(import.meta.url));
 const files = readdirSync(dir).filter((name) => name.endsWith('.svg'));
 
 // The six Garden Teahouse colors (tailwind.config.js). The art uses nothing else.
-const PALETTE = ['#F7F4EC', '#6F8466', '#4E5F47', '#E9DCC8', '#DDE5D3', '#2F3A2E'];
+const PALETTE = ['#F2D9B6', '#54685A', '#3E4E56', '#D8B898', '#C9D5C0', '#3A302A'];
 
 describe('placeholder art', () => {
   it('is a small set of illustrations', () => {

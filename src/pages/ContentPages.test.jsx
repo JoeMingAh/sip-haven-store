@@ -151,7 +151,7 @@ describe('Our story', () => {
     const tea = main().getByRole('link', { name: 'Browse tea' });
     const coffee = main().getByRole('link', { name: 'Browse coffee' });
     expect(quiz).toHaveAttribute('href', '/quiz');
-    expect(quiz).toHaveClass('bg-terracotta', 'text-cream');
+    expect(quiz).toHaveClass('bg-plum', 'text-cream');
     expect(tea).toHaveAttribute('href', '/tea');
     expect(tea).toHaveClass('border-ink', 'text-ink');
     expect(coffee).toHaveAttribute('href', '/coffee');
