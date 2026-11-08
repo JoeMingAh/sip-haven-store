@@ -6,21 +6,25 @@ export default {
     ],
     theme: {
         extend: {
-            // Garden Teahouse palette.
-            // Contrast on cream: ink 10.8:1, sage-deep 6.3:1, sage 3.7:1. WCAG AA needs
-            // 4.5:1 for small text, so keep `sage` for borders, icons and illustration.
-            // Those sit on cream. On sage-tint, sage drops to 3.1:1, so a border there
-            // uses sage-deep (5.3:1).
-            // Cream text on sage is 3.7:1 and white on sage is 4.1:1, so a bar or button
-            // that carries text uses sage-deep behind cream text (6.3:1), or sage-tint /
-            // wood behind ink or sage-deep text (5.1:1 or better).
+            // Garden Teahouse, shifted so it does not share a color with TBagger.
+            // `cream` is rice-paper oat #F2D9B6, not TBagger's #F6F4EE (CIEDE2000 13).
+            // Ink is warm charcoal #3A302A, not TBagger's black #0A0A0A (CIEDE2000 13).
+            // On the oat ground: ink 9.4:1, sage-deep 6.3:1, sage 4.4:1. Sage is for
+            // borders, icons and illustration. On sage-tint it is 3.9:1, still enough
+            // for a border (WCAG non-text is 3:1) and not for small text. Headings use
+            // sage-deep (5.7:1 on sage-tint, 4.6:1 on wood).
+            //
+            // The loud 10% is plum #6E2454, hibiscus rather than orange. Oat text on
+            // plum is 7.5:1. The button clears wood at 5.5:1 and sage-tint at 6.7:1.
+            // It is only for primary actions.
             colors: {
-                cream: "#F7F4EC",
-                sage: "#6F8466",
-                "sage-deep": "#4E5F47",
-                wood: "#E9DCC8",
-                "sage-tint": "#DDE5D3",
-                ink: "#2F3A2E",
+                cream: "#F2D9B6",
+                sage: "#54685A",
+                "sage-deep": "#3E4E56",
+                wood: "#D8B898",
+                "sage-tint": "#C9D5C0",
+                ink: "#3A302A",
+                plum: "#6E2454",
             },
             // Lora and Nunito Sans are self-hosted from @fontsource (see src/main.jsx).
             fontFamily: {

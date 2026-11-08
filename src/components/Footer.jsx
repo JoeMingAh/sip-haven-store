@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { footerLinks } from './navLinks.js';
 import SignupForm from './SignupForm.jsx';
@@ -30,22 +31,28 @@ function FooterColumn({ title, links }) {
 export default function Footer() {
   const { shop, about } = footerLinks();
   const { pathname } = useLocation();
+  // The subscribe control is portaled here so it spans the footer, not the narrow
+  // signup card. It is the loud call to action, and nothing else in the footer is.
+  const [barSlot, setBarSlot] = useState(null);
 
   return (
-    <footer className="mt-20 border-t border-wood bg-sage-tint text-ink">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 md:grid-cols-[3fr_2fr]">
-        <div>
+    <footer className="mt-16 border-t border-wood bg-cream text-ink">
+      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-10 md:grid-cols-[3fr_2fr] md:py-12">
+        <div className="md:rounded-3xl md:bg-wood md:px-6 md:py-6">
           <p className="font-serif text-2xl font-semibold text-sage-deep">Sip Haven</p>
           <p className="mt-3 max-w-xs text-sm leading-relaxed">
             Tea and coffee for slow mornings and long talks.
           </p>
 
-          <div className="mt-8 max-w-md">
+          {/* On a phone only the form sits on wood, so the footer is not one tall
+              secondary block. From md up the whole column is wood, which a wide
+              page needs in order to reach about a third secondary. */}
+          <div className="mt-8 max-w-md rounded-3xl bg-wood px-5 py-6 md:bg-transparent md:px-0 md:py-0">
             <h2 className="font-serif text-lg font-semibold text-sage-deep">Stay in the loop</h2>
             <p className="mb-4 mt-1 text-pretty text-sm leading-relaxed">
               Leave your email and we'll let you know when something new is brewing.
             </p>
-            <SignupForm interest={INTEREST_BY_PATH[pathname]} />
+            <SignupForm interest={INTEREST_BY_PATH[pathname]} barSlot={barSlot} />
           </div>
         </div>
 
@@ -54,6 +61,8 @@ export default function Footer() {
           <FooterColumn title="About" links={about} />
         </nav>
       </div>
+
+      <div ref={setBarSlot} className="contents" />
 
       <p className="border-t border-wood px-4 py-4 text-center text-xs">
         &copy; {YEAR} Sip Haven

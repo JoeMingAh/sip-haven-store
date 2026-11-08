@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { leafSprig } from '../assets/placeholders/index.js';
+import Bleed from '../components/Bleed.jsx';
 import {
   FAQ_JSON_LD_ID,
   ORGANIZATION_JSON_LD_ID,
@@ -48,51 +49,61 @@ function StoryJsonLd() {
  * our-story.html.
  */
 export default function OurStory() {
+  const [lead, ...rest] = OUR_STORY_PARAGRAPHS;
+
   return (
     <div className={STORY_CLASS.page}>
       <StoryJsonLd />
 
-      <img src={leafSprig} alt="" className={STORY_CLASS.leaf} />
-      <h1 className={STORY_CLASS.title}>{OUR_STORY_TITLE}</h1>
-      <p className={STORY_CLASS.subhead}>{OUR_STORY_SUBHEAD}</p>
-
-      {OUR_STORY_PARAGRAPHS.map((paragraph) => (
-        <p key={paragraph} className={STORY_CLASS.body}>
-          {paragraph}
-        </p>
-      ))}
-
-      <div className={STORY_CLASS.actions}>
-        {OUR_STORY_LINKS.map((link) => (
-          <Link key={link.href} to={link.href} className={link.filled ? STORY_CLASS.filled : STORY_CLASS.outline}>
-            {link.label}
-          </Link>
-        ))}
+      <div className={STORY_CLASS.inset}>
+        <img src={leafSprig} alt="" className={STORY_CLASS.leaf} />
+        <h1 className={STORY_CLASS.title}>{OUR_STORY_TITLE}</h1>
+        <p className={STORY_CLASS.subhead}>{OUR_STORY_SUBHEAD}</p>
+        <p className={STORY_CLASS.body}>{lead}</p>
       </div>
 
-      <section className={STORY_CLASS.questions}>
-        <h2 className={STORY_CLASS.questionsHeading}>{OUR_STORY_QUESTIONS_HEADING}</h2>
-        <div className={STORY_CLASS.faqList}>
-          {OUR_STORY_FAQS.map((faq) => (
-            <details key={faq.question} className={STORY_CLASS.faqItem}>
-              <summary className={STORY_CLASS.summary}>
-                <h3 className={STORY_CLASS.question}>{faq.question}</h3>
-                <svg aria-hidden="true" viewBox="0 0 20 20" className={STORY_CLASS.chevron}>
-                  <path
-                    d="M5 7.5 10 12.5 15 7.5"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </summary>
-              <p className={STORY_CLASS.answer}>{faq.answer}</p>
-            </details>
+      {/* The rituals and the links sit on wood, the questions on sage-tint, so this
+          page is not a single field of cream. */}
+      <Bleed tone="wood" className="mt-8">
+        {rest.map((paragraph) => (
+          <p key={paragraph} className={STORY_CLASS.body}>
+            {paragraph}
+          </p>
+        ))}
+        <div className={STORY_CLASS.actions}>
+          {OUR_STORY_LINKS.map((link) => (
+            <Link key={link.href} to={link.href} className={link.filled ? STORY_CLASS.filled : STORY_CLASS.outline}>
+              {link.label}
+            </Link>
           ))}
         </div>
-      </section>
+      </Bleed>
+
+      <Bleed tone="tint-desktop" className="mt-8">
+        <section>
+          <h2 className={STORY_CLASS.questionsHeading}>{OUR_STORY_QUESTIONS_HEADING}</h2>
+          <div className={STORY_CLASS.faqList}>
+            {OUR_STORY_FAQS.map((faq) => (
+              <details key={faq.question} className={STORY_CLASS.faqItem}>
+                <summary className={STORY_CLASS.summary}>
+                  <h3 className={STORY_CLASS.question}>{faq.question}</h3>
+                  <svg aria-hidden="true" viewBox="0 0 20 20" className={STORY_CLASS.chevron}>
+                    <path
+                      d="M5 7.5 10 12.5 15 7.5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </summary>
+                <p className={STORY_CLASS.answer}>{faq.answer}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+      </Bleed>
     </div>
   );
 }
