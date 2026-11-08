@@ -11,9 +11,14 @@ export default {
             // 4.5:1 for small text, so keep `sage` for borders, icons and illustration.
             // Those sit on cream. On sage-tint, sage drops to 3.1:1, so a border there
             // uses sage-deep (5.3:1).
-            // Cream text on sage is 3.7:1 and white on sage is 4.1:1, so a bar or button
-            // that carries text uses sage-deep behind cream text (6.3:1), or sage-tint /
+            // Cream text on sage is 3.7:1 and white on sage is 4.1:1, so a bar that
+            // carries text uses sage-deep behind cream text (6.3:1), or sage-tint /
             // wood behind ink or sage-deep text (5.1:1 or better).
+            //
+            // The loud 10% is terracotta, for primary actions only. It is the burnt
+            // orange #D9541E stepped darker on the same hue. #D9541E is 3.7:1 with
+            // cream, short of WCAG AA for a button label. #B84316 with cream is 5.0:1,
+            // and the button still separates from wood (4.0:1) and sage-tint (4.2:1).
             colors: {
                 cream: "#F7F4EC",
                 sage: "#6F8466",
@@ -21,6 +26,7 @@ export default {
                 wood: "#E9DCC8",
                 "sage-tint": "#DDE5D3",
                 ink: "#2F3A2E",
+                terracotta: "#B84316",
             },
             // Lora and Nunito Sans are self-hosted from @fontsource (see src/main.jsx).
             fontFamily: {

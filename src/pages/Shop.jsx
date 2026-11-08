@@ -4,6 +4,7 @@ import { isStoreOpen } from '../../lib/store-config.js';
 import { getProducts } from '../../lib/catalog.js';
 import { filterOptions, filterProducts, readFilters, writeFilters } from '../../lib/filter.js';
 import ComingSoon from '../components/ComingSoon.jsx';
+import { GHOST_BUTTON } from '../components/actions.js';
 import Filters from '../components/Filters.jsx';
 import ProductCard from '../components/ProductCard.jsx';
 
@@ -14,11 +15,6 @@ const PAGES = {
   tea: { title: 'Tea', one: 'tea', many: 'teas' },
   coffee: { title: 'Coffee', one: 'coffee', many: 'coffees' },
 };
-
-// Filled buttons use sage-deep behind cream text, which is the pairing that passes
-// WCAG AA (see tailwind.config.js).
-const FILLED_BUTTON =
-  'inline-flex min-h-12 items-center rounded-full bg-sage-deep px-7 text-base font-semibold text-cream hover:bg-ink';
 
 const NO_FILTERS = { flavors: [], caffeine: [], formats: [] };
 
@@ -106,7 +102,7 @@ function ProductBrowser({ category, products }) {
             <p className="text-balance font-serif text-xl font-semibold text-sage-deep">
               Nothing matches those filters yet.
             </p>
-            <button type="button" onClick={clear} className={`${FILLED_BUTTON} mt-5`}>
+            <button type="button" onClick={clear} className={`${GHOST_BUTTON} mt-5`}>
               Clear filters
             </button>
           </div>

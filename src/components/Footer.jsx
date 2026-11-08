@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { footerLinks } from './navLinks.js';
 import SignupForm from './SignupForm.jsx';
@@ -30,6 +31,9 @@ function FooterColumn({ title, links }) {
 export default function Footer() {
   const { shop, about } = footerLinks();
   const { pathname } = useLocation();
+  // The subscribe control is portaled here so it spans the footer, not the narrow
+  // signup card. It is the loud call to action, and nothing else in the footer is.
+  const [barSlot, setBarSlot] = useState(null);
 
   return (
     <footer className="mt-16 border-t border-wood bg-cream text-ink">
@@ -48,7 +52,7 @@ export default function Footer() {
             <p className="mb-4 mt-1 text-pretty text-sm leading-relaxed">
               Leave your email and we'll let you know when something new is brewing.
             </p>
-            <SignupForm interest={INTEREST_BY_PATH[pathname]} />
+            <SignupForm interest={INTEREST_BY_PATH[pathname]} barSlot={barSlot} />
           </div>
         </div>
 
@@ -57,6 +61,8 @@ export default function Footer() {
           <FooterColumn title="About" links={about} />
         </nav>
       </div>
+
+      <div ref={setBarSlot} className="contents" />
 
       <p className="border-t border-wood px-4 py-4 text-center text-xs">
         &copy; {YEAR} Sip Haven

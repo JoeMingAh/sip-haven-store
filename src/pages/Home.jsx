@@ -6,6 +6,7 @@ import { GUIDES } from '../data/guides.js';
 import ComingSoon from '../components/ComingSoon.jsx';
 import ProductCard from '../components/ProductCard.jsx';
 import { leafSprig, teapot, coffeeBean } from '../assets/placeholders/index.js';
+import { CTA_BUTTON, GHOST_BUTTON } from '../components/actions.js';
 
 // DRAFT COPY: the wording on this page needs Joseph's approval.
 
@@ -32,17 +33,9 @@ const PATHS = [
   },
 ];
 
-// Shared looks. Filled buttons use sage-deep behind cream text, which is the pairing
-// that passes WCAG AA (see tailwind.config.js); plain sage stays for accents.
+// Shared looks. The loud color is only the primary action (see actions.js).
 const SECTION = 'mx-auto mt-16 px-4 md:mt-24';
 const HEADING = 'text-balance font-serif text-3xl font-semibold text-sage-deep md:text-4xl';
-const FILLED_BUTTON =
-  'inline-flex min-h-12 items-center gap-2 rounded-full bg-sage-deep px-7 text-base font-semibold text-cream hover:bg-ink';
-const OUTLINE_BUTTON =
-  'inline-flex min-h-12 items-center gap-2 rounded-full border-2 border-sage-deep px-7 text-base font-semibold text-sage-deep hover:bg-sage-tint';
-// On a sage-tint band, the sage-tint hover would disappear, so it fills with cream.
-const OUTLINE_ON_TINT =
-  'inline-flex min-h-12 items-center gap-2 rounded-full border-2 border-sage-deep px-7 text-base font-semibold text-sage-deep hover:bg-cream';
 
 function PathCard({ to, title, formats, art, tile }) {
   return (
@@ -117,18 +110,20 @@ function Featured({ products }) {
 
 function QuizTeaser() {
   return (
-    <section aria-labelledby="home-quiz" className="mt-16 md:mt-24 md:bg-wood">
-      <div className="mx-4 rounded-3xl bg-wood px-4 py-10 text-center md:mx-auto md:max-w-4xl md:rounded-none md:bg-transparent md:px-12 md:py-14">
-        <h2 id="home-quiz" className={HEADING}>
-          Not sure where to begin?
-        </h2>
-        <p className="mx-auto mt-3 max-w-xl text-pretty text-lg leading-relaxed">
-          Answer a few quick questions and we'll point you toward a tea or coffee you might love.
-        </p>
-        <Link to="/quiz" className={`${FILLED_BUTTON} mt-6`}>
-          Take the quiz
-          <ArrowRight aria-hidden="true" size={18} />
-        </Link>
+    <section aria-labelledby="home-quiz" className="mt-16 md:mt-24">
+      <div className="bg-wood px-4 py-10 text-center md:py-14">
+        <div className="mx-auto max-w-4xl">
+          <h2 id="home-quiz" className={HEADING}>
+            Not sure where to begin?
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-pretty text-lg leading-relaxed">
+            Answer a few quick questions and we'll point you toward a tea or coffee you might love.
+          </p>
+          <Link to="/quiz" className={`${CTA_BUTTON} mt-6`}>
+            Take the quiz
+            <ArrowRight aria-hidden="true" size={18} />
+          </Link>
+        </div>
       </div>
     </section>
   );
@@ -151,7 +146,7 @@ function StoryTeaser() {
           Sip Haven is built around a simple idea: a good cup is a small way to pause. We're putting
           together tea and coffee for quiet mornings, long talks and everything in between.
         </p>
-        <Link to="/our-story" className={`${OUTLINE_BUTTON} mt-6`}>
+        <Link to="/our-story" className={`${GHOST_BUTTON} mt-6`}>
           Read our story
         </Link>
       </div>
@@ -169,7 +164,7 @@ function GuidesTeaser() {
         <p className="mx-auto mt-3 max-w-xl text-pretty text-lg leading-relaxed">
           Simple how-tos for a better cup at home.
         </p>
-        <Link to="/learn" className={`${OUTLINE_ON_TINT} mt-6`}>
+        <Link to="/learn" className={`${GHOST_BUTTON} mt-6`}>
           Read the guides
         </Link>
       </div>

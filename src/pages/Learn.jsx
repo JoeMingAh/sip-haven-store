@@ -3,14 +3,7 @@ import { Link } from 'react-router-dom';
 import { GUIDES } from '../data/guides.js';
 import { teapot } from '../assets/placeholders/index.js';
 import Bleed from '../components/Bleed.jsx';
-
-// Filled buttons use sage-deep behind cream text, which is the pairing that passes
-// WCAG AA (see tailwind.config.js). On the sage-tint panel the outline buttons fill
-// with cream when hovered, since sage-tint would not show against it.
-const FILLED_BUTTON =
-  'inline-flex min-h-12 items-center rounded-full bg-sage-deep px-7 text-base font-semibold text-cream hover:bg-ink';
-const OUTLINE_BUTTON =
-  'inline-flex min-h-12 items-center rounded-full border-2 border-sage-deep px-7 text-base font-semibold text-sage-deep hover:bg-cream';
+import { CTA_BUTTON, GHOST_BUTTON } from '../components/actions.js';
 
 /**
  * /learn. The brewing guides in src/data/guides.js, each a card that opens its page.
@@ -80,13 +73,13 @@ export default function Learn() {
               In the meantime, the quiz can help you find a cup to try.
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <Link to="/quiz" className={FILLED_BUTTON}>
+              <Link to="/quiz" className={CTA_BUTTON}>
                 Take the quiz
               </Link>
-              <Link to="/tea" className={OUTLINE_BUTTON}>
+              <Link to="/tea" className={GHOST_BUTTON}>
                 Browse tea
               </Link>
-              <Link to="/coffee" className={OUTLINE_BUTTON}>
+              <Link to="/coffee" className={GHOST_BUTTON}>
                 Browse coffee
               </Link>
             </div>

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import Bleed from '../components/Bleed.jsx';
+import { CTA_BUTTON, GHOST_BUTTON } from '../components/actions.js';
 
 // Shown for any address that matches no page. A page can also render it itself
 // when what it was asked for does not exist, such as a product slug that is not in
@@ -17,16 +18,10 @@ export default function NotFound() {
             you were after.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link
-              to="/tea"
-              className="inline-flex min-h-11 items-center rounded-full bg-cream px-6 text-sm font-semibold text-ink hover:bg-wood"
-            >
+            <Link to="/tea" className={CTA_BUTTON}>
               Browse tea
             </Link>
-            <Link
-              to="/coffee"
-              className="inline-flex min-h-11 items-center rounded-full bg-wood px-6 text-sm font-semibold text-ink hover:bg-cream"
-            >
+            <Link to="/coffee" className={GHOST_BUTTON}>
               Browse coffee
             </Link>
           </div>

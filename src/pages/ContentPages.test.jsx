@@ -151,11 +151,11 @@ describe('Our story', () => {
     const tea = main().getByRole('link', { name: 'Browse tea' });
     const coffee = main().getByRole('link', { name: 'Browse coffee' });
     expect(quiz).toHaveAttribute('href', '/quiz');
-    expect(quiz).toHaveClass('bg-sage-deep', 'text-cream', 'rounded-full');
+    expect(quiz).toHaveClass('bg-terracotta', 'text-cream');
     expect(tea).toHaveAttribute('href', '/tea');
-    expect(tea).toHaveClass('border-sage-deep', 'text-sage-deep', 'rounded-full');
+    expect(tea).toHaveClass('border-ink', 'text-ink');
     expect(coffee).toHaveAttribute('href', '/coffee');
-    expect(coffee).toHaveClass('border-sage-deep', 'text-sage-deep', 'rounded-full');
+    expect(coffee).toHaveClass('border-ink', 'text-ink');
     expect(main().getAllByRole('link')).toHaveLength(3);
   });
 

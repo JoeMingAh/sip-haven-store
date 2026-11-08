@@ -3,13 +3,7 @@ import { Link } from 'react-router-dom';
 import { cupWithSteam } from '../assets/placeholders/index.js';
 import { useCart } from '../cart/CartContext.jsx';
 import Bleed from '../components/Bleed.jsx';
-
-// Filled buttons use sage-deep behind cream text, which is the pairing that passes
-// WCAG AA (see tailwind.config.js).
-const FILLED_BUTTON =
-  'inline-flex min-h-12 items-center rounded-full bg-sage-deep px-7 text-base font-semibold text-cream hover:bg-ink';
-const OUTLINE_BUTTON =
-  'inline-flex min-h-12 items-center rounded-full border-2 border-sage-deep px-7 text-base font-semibold text-sage-deep hover:bg-sage-tint';
+import { CTA_BUTTON, GHOST_BUTTON } from '../components/actions.js';
 
 const BODY = 'mx-auto mt-4 max-w-md text-pretty text-lg leading-relaxed';
 
@@ -62,10 +56,10 @@ export default function Success() {
         </p>
 
         <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Link to="/tea" className={FILLED_BUTTON}>
+          <Link to="/tea" className={CTA_BUTTON}>
             Browse tea
           </Link>
-          <Link to="/coffee" className={OUTLINE_BUTTON}>
+          <Link to="/coffee" className={GHOST_BUTTON}>
             Browse coffee
           </Link>
         </div>

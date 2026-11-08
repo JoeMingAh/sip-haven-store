@@ -1,11 +1,9 @@
 import { CONTACT_EMAIL } from '../../lib/store-config.js';
 import Bleed from '../components/Bleed.jsx';
+import { CTA_BUTTON } from '../components/actions.js';
 
-// Filled buttons use sage-deep behind cream text, which is the pairing that passes
-// WCAG AA (see tailwind.config.js). The break and padding let a long address wrap
-// inside a narrow screen instead of running off it.
-const EMAIL_BUTTON =
-  'inline-flex min-h-12 max-w-full break-all items-center rounded-full bg-sage-deep px-7 py-2 text-base font-semibold text-cream hover:bg-ink';
+// The break and padding let a long address wrap inside a narrow screen.
+const EMAIL_BUTTON = `${CTA_BUTTON} max-w-full break-all py-2`;
 
 const BODY = 'mt-5 text-pretty text-lg leading-relaxed';
 

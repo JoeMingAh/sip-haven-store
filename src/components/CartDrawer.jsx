@@ -8,6 +8,7 @@ import { startCheckout } from '../cart/checkout.js';
 import { cupWithSteam, placeholderFor } from '../assets/placeholders/index.js';
 import { formatLabel, formatPrice } from '../format.js';
 import FreeShippingProgress from './FreeShippingProgress.jsx';
+import { CTA_BUTTON } from './actions.js';
 
 // DRAFT COPY: the wording here needs Joseph's approval.
 
@@ -15,8 +16,7 @@ import FreeShippingProgress from './FreeShippingProgress.jsx';
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-const FILLED_BUTTON =
-  'inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-sage-deep px-7 text-base font-semibold text-cream hover:bg-ink disabled:cursor-wait disabled:opacity-70';
+const FILLED_BUTTON = `${CTA_BUTTON} w-full`;
 const LINK_BUTTON =
   'inline-flex min-h-11 items-center rounded-full px-6 text-sm font-semibold text-ink';
 const ICON_BUTTON =

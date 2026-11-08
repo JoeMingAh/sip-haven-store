@@ -2,6 +2,7 @@
 // our-story.html (lib/our-story-html.js) both read these words, so a crawler that
 // does not run JavaScript sees the same story as a visitor.
 import { DEFAULT_SITE_URL } from '../../lib/site-url.js';
+import { CTA_BUTTON, GHOST_BUTTON } from '../components/actions.js';
 import { PAGE_META } from './pageMeta.js';
 
 // The same shape as the live page: a leaf, "Our story", a serif subheading, then
@@ -44,10 +45,10 @@ export const OUR_STORY_FAQS = [
 ];
 
 // Classes shared with the live page, so the static copy matches it if it shows.
-// max-w-prose is about 65 characters. The filled button is the only solid accent.
+// max-w-prose is about 65 characters. The filled control is the loud quiz action.
 export const STORY_CLASS = {
   // Horizontal padding lives on `inset`. The React page omits it on the root so a
-  // wood or sage-tint panel can span the column between the sage rails.
+  // wood or sage-tint panel can span wider than the text column.
   page: 'mx-auto w-full max-w-prose py-10 md:py-14',
   inset: 'px-4',
   leaf: 'h-16 w-16',
@@ -55,10 +56,8 @@ export const STORY_CLASS = {
   subhead: 'mt-4 text-pretty font-serif text-2xl leading-snug',
   body: 'mt-5 text-pretty text-lg leading-relaxed',
   actions: 'mt-8 flex flex-wrap gap-3',
-  filled:
-    'inline-flex min-h-12 items-center rounded-full bg-sage-deep px-7 text-base font-semibold text-cream hover:bg-ink',
-  outline:
-    'inline-flex min-h-12 items-center rounded-full border-2 border-sage-deep px-7 text-base font-semibold text-sage-deep hover:bg-sage-tint',
+  filled: CTA_BUTTON,
+  outline: GHOST_BUTTON,
   questions: 'mt-16 md:mt-24',
   questionsHeading: 'font-serif text-lg font-semibold text-sage-deep',
   faqList: 'mt-4 divide-y divide-wood',

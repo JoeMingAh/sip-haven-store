@@ -11,6 +11,7 @@ import VariantPicker from '../components/VariantPicker.jsx';
 import { placeholderFor } from '../assets/placeholders/index.js';
 import { formatPrice } from '../format.js';
 import NotFound from './NotFound.jsx';
+import { CTA_BUTTON } from '../components/actions.js';
 
 // DRAFT COPY: the wording on this page needs Joseph's approval.
 
@@ -20,10 +21,7 @@ const TILE = { tea: 'bg-sage-tint', coffee: 'bg-wood' };
 
 const SECTION_HEADING = 'font-serif text-xl font-semibold text-sage-deep';
 
-// Filled buttons use sage-deep behind cream text, which is the pairing that passes
-// WCAG AA (see tailwind.config.js).
-const ADD_BUTTON =
-  'inline-flex min-h-12 w-full items-center justify-center rounded-full bg-sage-deep px-8 text-base font-semibold text-cream hover:bg-ink sm:w-auto';
+const ADD_BUTTON = `${CTA_BUTTON} w-full px-8 sm:w-auto`;
 const UNAVAILABLE_BUTTON =
   'inline-flex min-h-12 w-full cursor-not-allowed items-center justify-center rounded-full bg-wood px-8 text-base font-semibold text-ink sm:w-auto';
 
