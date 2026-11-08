@@ -46,7 +46,10 @@ export const OUR_STORY_FAQS = [
 // Classes shared with the live page, so the static copy matches it if it shows.
 // max-w-prose is about 65 characters. The filled button is the only solid accent.
 export const STORY_CLASS = {
-  page: 'mx-auto w-full max-w-prose px-4 py-10 md:py-14',
+  // Horizontal padding lives on `inset`. The React page omits it on the root so a
+  // wood or sage-tint panel can span the column between the sage rails.
+  page: 'mx-auto w-full max-w-prose py-10 md:py-14',
+  inset: 'px-4',
   leaf: 'h-16 w-16',
   title: 'mt-4 text-balance font-serif text-4xl font-semibold leading-tight text-sage-deep md:text-5xl',
   subhead: 'mt-4 text-pretty font-serif text-2xl leading-snug',

@@ -40,6 +40,9 @@ const FILLED_BUTTON =
   'inline-flex min-h-12 items-center gap-2 rounded-full bg-sage-deep px-7 text-base font-semibold text-cream hover:bg-ink';
 const OUTLINE_BUTTON =
   'inline-flex min-h-12 items-center gap-2 rounded-full border-2 border-sage-deep px-7 text-base font-semibold text-sage-deep hover:bg-sage-tint';
+// On a sage-tint band, the sage-tint hover would disappear, so it fills with cream.
+const OUTLINE_ON_TINT =
+  'inline-flex min-h-12 items-center gap-2 rounded-full border-2 border-sage-deep px-7 text-base font-semibold text-sage-deep hover:bg-cream';
 
 function PathCard({ to, title, formats, art, tile }) {
   return (
@@ -114,8 +117,8 @@ function Featured({ products }) {
 
 function QuizTeaser() {
   return (
-    <section aria-labelledby="home-quiz" className={`${SECTION} max-w-4xl`}>
-      <div className="rounded-3xl bg-wood px-6 py-10 text-center md:px-12 md:py-14">
+    <section aria-labelledby="home-quiz" className="mt-16 md:mt-24 md:bg-wood">
+      <div className="mx-4 rounded-3xl bg-wood px-4 py-10 text-center md:mx-auto md:max-w-4xl md:rounded-none md:bg-transparent md:px-12 md:py-14">
         <h2 id="home-quiz" className={HEADING}>
           Not sure where to begin?
         </h2>
@@ -158,15 +161,15 @@ function StoryTeaser() {
 
 function GuidesTeaser() {
   return (
-    <section aria-labelledby="home-guides" className={`${SECTION} max-w-4xl`}>
-      <div className="rounded-3xl bg-sage-tint px-6 py-10 text-center md:px-12 md:py-12">
+    <section aria-labelledby="home-guides" className="mt-16 bg-sage-tint md:mt-24">
+      <div className="mx-auto max-w-4xl px-4 py-10 text-center md:px-12 md:py-12">
         <h2 id="home-guides" className={HEADING}>
           Brewing guides
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-pretty text-lg leading-relaxed">
           Simple how-tos for a better cup at home.
         </p>
-        <Link to="/learn" className={`${OUTLINE_BUTTON} mt-6`}>
+        <Link to="/learn" className={`${OUTLINE_ON_TINT} mt-6`}>
           Read the guides
         </Link>
       </div>

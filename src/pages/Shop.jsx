@@ -131,10 +131,10 @@ export default function Shop({ category }) {
   const comingSoon = products.length === 0;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 md:py-14">
+    <div className="py-10 md:py-14">
       {/* A div, not a header: Layout has the page's one banner, and Testing Library
           counts every header as a banner. */}
-      <div className="text-center">
+      <div className="mx-auto max-w-6xl px-4 text-center">
         <h1 className="text-balance font-serif text-4xl font-semibold leading-tight text-sage-deep md:text-5xl">
           {page.title}
         </h1>
@@ -146,11 +146,15 @@ export default function Shop({ category }) {
       </div>
 
       {comingSoon ? (
-        <div className="mt-8 md:mt-10">
-          <ComingSoon interest={category} />
+        <div className="mx-auto mt-8 max-w-3xl px-4 md:mt-10">
+          <div className="md:rounded-3xl md:bg-wood md:px-6 md:py-8">
+            <ComingSoon interest={category} />
+          </div>
         </div>
       ) : (
-        <ProductBrowser key={category} category={category} products={products} />
+        <div className="mx-auto max-w-6xl px-4">
+          <ProductBrowser key={category} category={category} products={products} />
+        </div>
       )}
     </div>
   );

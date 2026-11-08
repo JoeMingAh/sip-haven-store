@@ -244,12 +244,14 @@ function ProductDetails({ product }) {
 // keeps its own h1, because the coming-soon panel is an h2.
 function ComingSoonProduct() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 md:py-14">
-      <h1 className="text-balance text-center font-serif text-4xl font-semibold leading-tight text-sage-deep md:text-5xl">
+    <div className="py-10 md:py-14">
+      <h1 className="text-balance px-4 text-center font-serif text-4xl font-semibold leading-tight text-sage-deep md:text-5xl">
         Coming soon
       </h1>
-      <div className="mt-8 md:mt-10">
-        <ComingSoon />
+      <div className="mx-auto mt-8 max-w-3xl px-4 md:mt-10">
+        <div className="md:rounded-3xl md:bg-wood md:px-6 md:py-8">
+          <ComingSoon />
+        </div>
       </div>
     </div>
   );
