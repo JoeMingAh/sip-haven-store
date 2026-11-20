@@ -14,6 +14,7 @@ const PAGE_MODULES = {
   '/coffee': 'src/pages/Shop.jsx',
   '/quiz': 'src/pages/Quiz.jsx',
   '/our-story': 'src/pages/OurStory.jsx',
+  '/tasting-flight': 'src/pages/TastingFlight.jsx',
   '/contact': 'src/pages/Contact.jsx',
   '/shipping-returns': 'src/pages/ShippingReturns.jsx',
   '/privacy': 'src/pages/Privacy.jsx',

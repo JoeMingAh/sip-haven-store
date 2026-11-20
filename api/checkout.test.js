@@ -75,6 +75,20 @@ vi.mock('../src/data/lineup.json', () => ({
   },
 }));
 
+// The Tasting Flight offer, as it will be once its Stripe price exists (the real one
+// in lib/offers.js has no stripe_price_id yet, so it cannot be sold).
+vi.mock('../lib/offers.js', async (importOriginal) => {
+  const actual = await importOriginal();
+  const flight = {
+    ...actual.TASTING_FLIGHT,
+    variants: actual.TASTING_FLIGHT.variants.map((variant) => ({
+      ...variant,
+      stripe_price_id: 'price_tasting_flight',
+    })),
+  };
+  return { ...actual, TASTING_FLIGHT: flight, OFFERS: [flight] };
+});
+
 // The site's own address (SITE_URL), and the Origin a shopper on the site posts from.
 const SITE_URL = 'https://siphaven.com';
 const ORIGIN = SITE_URL;
@@ -149,6 +163,7 @@ describe('buildLineItems', () => {
         { price: 'price_house_bag', quantity: 1 },
       ],
       subtotal_cents: 2 * 1250 + 1 * 1600,
+      free_shipping: false,
     });
   });
 
@@ -162,6 +177,7 @@ describe('buildLineItems', () => {
     expect(buildLineItems([cheat])).toEqual({
       line_items: [{ price: 'price_jasmine_tin', quantity: 1 }],
       subtotal_cents: 1250,
+      free_shipping: false,
     });
   });
 
@@ -223,6 +239,16 @@ describe('buildLineItems', () => {
     expect(error).toBeInstanceOf(CheckoutError);
     expect(error.message).toBe('That item is no longer available.');
   });
+
+  it('sells the Tasting Flight offer at its own price, and says it ships free', () => {
+    const flight = { slug: 'tasting-flight', variantId: 'flight-4-tins', qty: 1 };
+    expect(buildLineItems([flight])).toEqual({
+      line_items: [{ price: 'price_tasting_flight', quantity: 1 }],
+      subtotal_cents: 4200,
+      free_shipping: true,
+    });
+    expect(buildLineItems([tin(1), flight]).free_shipping).toBe(true);
+  });
 });
 
 describe('shippingOptions', () => {
@@ -263,6 +289,11 @@ describe('shippingOptions', () => {
   it('charges the flat rate for a tiny or empty subtotal', () => {
     expect(shippingOptions(1)).toEqual(flat);
     expect(shippingOptions(0)).toEqual(flat);
+  });
+
+  it('is free under the threshold when a line ships free on its own', () => {
+    expect(shippingOptions(4200, { freeShipping: true })).toEqual(free);
+    expect(shippingOptions(4200, { freeShipping: false })).toEqual(flat);
   });
 
   it('offers exactly one rate, in US dollars, with no delivery-time promise', () => {
@@ -469,6 +500,14 @@ describe('POST /api/checkout', () => {
       success_url: 'https://siphaven.com/success?session_id={CHECKOUT_SESSION_ID}',
       cancel_url: 'https://siphaven.com/cart',
     });
+  });
+
+  it('ships a $42 Tasting Flight free, under the free-shipping threshold, and accepts promotion codes', async () => {
+    const res = await post({ items: [{ slug: 'tasting-flight', variantId: 'flight-4-tins', qty: 1 }] });
+    expect(res.statusCode).toBe(200);
+    expect(sessionParams().line_items).toEqual([{ price: 'price_tasting_flight', quantity: 1 }]);
+    expect(sessionParams().shipping_options[0].shipping_rate_data.fixed_amount.amount).toBe(0);
+    expect(sessionParams().allow_promotion_codes).toBe(true);
   });
 
   it('asks Stripe for automatic tax and promotion codes', async () => {

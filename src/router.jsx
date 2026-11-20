@@ -19,6 +19,7 @@ const Quiz = lazyPage(() => import('./pages/Quiz.jsx'));
 const ShippingReturns = lazyPage(() => import('./pages/ShippingReturns.jsx'));
 const Shop = lazyPage(() => import('./pages/Shop.jsx'));
 const Success = lazyPage(() => import('./pages/Success.jsx'));
+const TastingFlight = lazyPage(() => import('./pages/TastingFlight.jsx'));
 
 // Every route sits inside Layout (shipping strip, header, footer), and Layout sits
 // inside the CartProvider, so the Header's Cart button, the product pages and the
@@ -47,6 +48,7 @@ export const routes = [
       { path: 'learn', element: <Learn /> },
       { path: 'learn/:slug', element: <Guide /> },
       { path: 'our-story', element: <OurStory /> },
+      { path: 'tasting-flight', element: <TastingFlight /> },
       { path: 'contact', element: <Contact /> },
       { path: 'shipping-returns', element: <ShippingReturns /> },
       { path: 'privacy', element: <Privacy /> },

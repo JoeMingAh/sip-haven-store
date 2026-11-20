@@ -43,6 +43,11 @@ export const PAGE_META = {
     description:
       'Sip Haven is an online tea and coffee store for slow mornings and quiet moments. Loose-leaf tea, K-Cups, and whole bean and ground coffee.',
   },
+  '/tasting-flight': {
+    title: 'Taiwanese Tasting Flight | Sip Haven',
+    description:
+      'Four single-origin Taiwanese tea tins, whole-leaf and built for three infusions each. The Sip Haven Tasting Flight is $42 with complimentary shipping.',
+  },
   '/contact': {
     title: 'Contact us | Sip Haven',
     description:

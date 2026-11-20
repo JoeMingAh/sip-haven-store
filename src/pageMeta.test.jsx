@@ -11,14 +11,24 @@ import { DEFAULT_SITE_URL } from '../lib/site-url.js';
 import { sitemapPaths } from '../lib/site-files.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const PAGES = ['/', '/tea', '/coffee', '/quiz', '/our-story', '/contact', '/shipping-returns', '/privacy'];
+const PAGES = [
+  '/',
+  '/tea',
+  '/coffee',
+  '/quiz',
+  '/our-story',
+  '/tasting-flight',
+  '/contact',
+  '/shipping-returns',
+  '/privacy',
+];
 const entries = Object.values(PAGE_META);
 
 const head = (selector) => document.head.querySelector(selector);
 const content = (selector) => head(selector)?.getAttribute('content');
 
 describe('the page titles and descriptions (src/data/pageMeta.js)', () => {
-  it('cover exactly the eight pages in the sitemap', () => {
+  it('cover exactly the nine pages in the sitemap', () => {
     expect(Object.keys(PAGE_META)).toEqual(PAGES);
     expect(Object.keys(PAGE_META)).toEqual(sitemapPaths({ products: [], guides: [] }));
   });

@@ -13,6 +13,7 @@
     { "source": "/learn", "destination": "/app.html" },
     { "source": "/learn/:slug", "destination": "/app.html" },
     { "source": "/our-story", "destination": "/our-story.html" },
+    { "source": "/tasting-flight", "destination": "/tasting-flight.html" },
     { "source": "/contact", "destination": "/contact.html" },
     { "source": "/shipping-returns", "destination": "/shipping-returns.html" },
     { "source": "/privacy", "destination": "/privacy.html" },
