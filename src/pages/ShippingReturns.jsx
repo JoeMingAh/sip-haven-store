@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import { FLAT_SHIPPING_CENTS, FREE_SHIPPING_CENTS } from '../../lib/store-config.js';
+import Bleed from '../components/Bleed.jsx';
 import { formatDollars } from '../format.js';
 
-const SECTION_HEADING = 'mt-10 font-serif text-2xl font-semibold text-sage-deep';
 const BODY = 'mt-4 text-pretty text-lg leading-relaxed';
 
 /**
@@ -17,30 +17,36 @@ const BODY = 'mt-4 text-pretty text-lg leading-relaxed';
  */
 export default function ShippingReturns() {
   return (
-    <div className="mx-auto max-w-prose px-4 py-10 md:py-14">
+    <div className="mx-auto max-w-prose py-10 md:py-14">
       {/* DRAFT COPY: needs Joseph's approval */}
-      <h1 className="text-balance font-serif text-4xl font-semibold leading-tight text-sage-deep md:text-5xl">
-        Shipping and returns
-      </h1>
+      <div className="px-4">
+        <h1 className="text-balance font-serif text-4xl font-semibold leading-tight text-sage-deep md:text-5xl">
+          Shipping and returns
+        </h1>
+      </div>
 
-      <h2 className={SECTION_HEADING}>Shipping</h2>
-      <p className={BODY}>We ship to addresses in the United States.</p>
-      <p className={BODY}>
-        Orders of {formatDollars(FREE_SHIPPING_CENTS)} or more ship free. Smaller orders ship for a
-        flat {formatDollars(FLAT_SHIPPING_CENTS)}.
-      </p>
-      <p className={BODY}>You'll see your shipping cost at checkout, before you pay.</p>
+      <Bleed tone="tint" className="mt-6">
+        <h2 className="font-serif text-2xl font-semibold text-sage-deep">Shipping</h2>
+        <p className={BODY}>We ship to addresses in the United States.</p>
+        <p className={BODY}>
+          Orders of {formatDollars(FREE_SHIPPING_CENTS)} or more ship free. Smaller orders ship for a
+          flat {formatDollars(FLAT_SHIPPING_CENTS)}.
+        </p>
+        <p className={BODY}>You'll see your shipping cost at checkout, before you pay.</p>
+      </Bleed>
 
-      <h2 className={SECTION_HEADING}>Returns</h2>
-      <p className={BODY}>
-        <Link
-          to="/contact"
-          className="font-semibold text-sage-deep underline underline-offset-4 hover:no-underline"
-        >
-          Contact us
-        </Link>{' '}
-        if anything arrives damaged and we'll make it right.
-      </p>
+      <Bleed tone="wood-desktop" className="mt-6">
+        <h2 className="font-serif text-2xl font-semibold text-sage-deep">Returns</h2>
+        <p className={BODY}>
+          <Link
+            to="/contact"
+            className="font-semibold text-sage-deep underline underline-offset-4 hover:no-underline"
+          >
+            Contact us
+          </Link>{' '}
+          if anything arrives damaged and we'll make it right.
+        </p>
+      </Bleed>
     </div>
   );
 }

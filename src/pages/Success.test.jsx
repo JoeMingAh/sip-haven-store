@@ -100,9 +100,9 @@ describe('Success: the page', () => {
     expect(main().getByRole('link', { name: 'Contact us' })).toHaveAttribute('href', '/contact');
   });
 
-  it('uses the filled-button look that passes contrast: sage-deep behind cream text', () => {
+  it('uses the loud call-to-action look: plum behind oat text', () => {
     renderAt(FROM_STRIPE);
-    expect(main().getByRole('link', { name: 'Browse tea' })).toHaveClass('bg-sage-deep', 'text-cream');
+    expect(main().getByRole('link', { name: 'Browse tea' })).toHaveClass('bg-plum', 'text-cream');
   });
 
   it('keeps its text to a readable width', () => {

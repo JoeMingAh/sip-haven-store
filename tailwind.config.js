@@ -6,21 +6,27 @@ export default {
     ],
     theme: {
         extend: {
-            // Garden Teahouse palette.
-            // Contrast on cream: ink 10.8:1, sage-deep 6.3:1, sage 3.7:1. WCAG AA needs
-            // 4.5:1 for small text, so keep `sage` for borders, icons and illustration.
-            // Those sit on cream. On sage-tint, sage drops to 3.1:1, so a border there
-            // uses sage-deep (5.3:1).
-            // Cream text on sage is 3.7:1 and white on sage is 4.1:1, so a bar or button
-            // that carries text uses sage-deep behind cream text (6.3:1), or sage-tint /
-            // wood behind ink or sage-deep text (5.1:1 or better).
+            // One warm tea-house scale. The oat ground, the wood panel, and the ink
+            // share a hue near 80°. Sage-tint, sage, and sage-deep step from that
+            // parchment toward olive (hue 105 to 128). They are not the cool mint and
+            // blue-slate that were sitting on the peach ground.
+            // On oat #F2D9B6: ink 9.0:1, sage-deep 7.0:1, sage 3.8:1. Sage is for
+            // borders, icons, and illustration. On sage-tint it is 3.3:1 and on wood
+            // 3.1:1, enough for a border and not for small text. Headings use
+            // sage-deep (6.0:1 on sage-tint, 5.7:1 on wood).
+            //
+            // The loud 10% is rose hip #7A3044. It is a warm berry, the same warmth
+            // as the oat, and it is not orange, gold, or forest green. Oat text on
+            // it is 6.6:1. The button clears wood at 5.3:1 and sage-tint at 5.7:1.
+            // It is only for primary actions.
             colors: {
-                cream: "#F7F4EC",
-                sage: "#6F8466",
-                "sage-deep": "#4E5F47",
-                wood: "#E9DCC8",
-                "sage-tint": "#DDE5D3",
-                ink: "#2F3A2E",
+                cream: "#F2D9B6",
+                sage: "#65724E",
+                "sage-deep": "#404838",
+                wood: "#DCC4A0",
+                "sage-tint": "#D2CFAE",
+                ink: "#3A342C",
+                plum: "#7A3044",
             },
             // Lora and Nunito Sans are self-hosted from @fontsource (see src/main.jsx).
             fontFamily: {

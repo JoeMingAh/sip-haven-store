@@ -255,9 +255,9 @@ export default function Quiz() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10 md:py-14">
+    <div className="py-10 md:py-14">
       {/* A div, not a header: Layout has the page's one banner. */}
-      <div className="text-center">
+      <div className="mx-auto max-w-4xl px-4 text-center">
         <h1 className="text-balance font-serif text-4xl font-semibold leading-tight text-sage-deep md:text-5xl">
           Find your cup
         </h1>
@@ -268,23 +268,25 @@ export default function Quiz() {
         )}
       </div>
 
-      <div className="mt-8 md:mt-10">
-        {finished ? (
-          <Result answers={answers} grabFocus={moved} />
-        ) : (
-          <Question
-            key={step}
-            question={question}
-            step={step}
-            chosenId={answers[question.id]}
-            grabFocus={moved}
-            onChoose={choose}
-          />
-        )}
+      <div className="mx-auto mt-8 max-w-3xl px-4 md:mt-10 md:max-w-4xl">
+        <div className="rounded-3xl bg-wood px-4 py-6 sm:px-6 md:py-8">
+          {finished ? (
+            <Result answers={answers} grabFocus={moved} />
+          ) : (
+            <Question
+              key={step}
+              question={question}
+              step={step}
+              chosenId={answers[question.id]}
+              grabFocus={moved}
+              onChoose={choose}
+            />
+          )}
+        </div>
       </div>
 
       {step > 0 && (
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-8">
+        <div className="mx-auto mt-6 flex max-w-4xl flex-wrap items-center justify-center gap-x-8 px-4">
           <button type="button" onClick={back} className={TEXT_BUTTON}>
             <ArrowLeft aria-hidden="true" size={18} />
             Back
