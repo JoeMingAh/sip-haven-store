@@ -1,5 +1,5 @@
 // Primary actions only: Shop, subscribe, quiz, add to cart, checkout.
-// Oat text on plum is 7.5:1 (see tailwind.config.js). Hover goes to ink,
+// Oat text on plum is 6.6:1 (see tailwind.config.js). Hover goes to ink,
 // which keeps that label readable.
 export const CTA_BUTTON =
   'inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-plum px-7 py-3 text-base font-semibold text-cream hover:bg-ink disabled:cursor-wait disabled:opacity-70';
