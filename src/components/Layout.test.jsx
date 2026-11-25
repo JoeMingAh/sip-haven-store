@@ -5,6 +5,9 @@ import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { createMemoryRouter, matchRoutes, RouterProvider } from 'react-router-dom';
 import { routes } from '../router.jsx';
+import { CartProvider } from '../cart/CartContext.jsx';
+import { lazyPage } from '../lazyPage.js';
+import Layout from './Layout.jsx';
 
 function renderAt(path) {
   const router = createMemoryRouter(routes, { initialEntries: [path] });
@@ -60,6 +63,53 @@ describe('shipping strip', () => {
   it('says free shipping starts at $50, the amount itself included', () => {
     renderAt('/');
     expect(screen.getByText(/free shipping on orders of \$50 or more/i)).toBeInTheDocument();
+  });
+
+  it('sits in a labelled landmark, outside <main>', () => {
+    renderAt('/');
+    const strip = screen.getByRole('complementary', { name: 'Shipping offer' });
+    expect(strip).toHaveTextContent(/free shipping on orders of \$50 or more/i);
+    expect(screen.getByRole('main')).not.toContainElement(strip);
+  });
+});
+
+describe('footer while the first page loads', () => {
+  // The test setup preloads every page (src/test/setup.js), so this uses a page of its
+  // own that has not been loaded yet.
+  function renderPending() {
+    let finish;
+    const Page = lazyPage(
+      () => new Promise((resolve) => (finish = () => resolve({ default: () => <h1>Loaded page</h1> }))),
+    );
+    const router = createMemoryRouter(
+      [{ path: '/', element: <CartProvider><Layout /></CartProvider>, children: [{ index: true, element: <Page /> }] }],
+      { initialEntries: ['/'] },
+    );
+    render(<RouterProvider router={router} />);
+    return () => finish();
+  }
+
+  it('marks the loading placeholder until the page arrives, then drops it', async () => {
+    const finish = renderPending();
+    const main = screen.getByRole('main');
+    expect(main.querySelector('[data-page-loading]')).toBeInTheDocument();
+
+    finish();
+    expect(await screen.findByRole('heading', { name: 'Loaded page' })).toBeInTheDocument();
+    expect(main.querySelector('[data-page-loading]')).not.toBeInTheDocument();
+  });
+
+  it('keeps the footer as the next sibling of <main>, which the CSS rule relies on', () => {
+    renderPending();
+    expect(screen.getByRole('main').nextElementSibling).toBe(screen.getByRole('contentinfo'));
+  });
+
+  it('hides the footer, keeping its space, while the placeholder shows', () => {
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const css = readFileSync(path.join(here, '..', 'index.css'), 'utf8');
+    expect(css).toMatch(
+      /main:has\(\[data-page-loading\]\)\s*~\s*footer\s*\{\s*visibility:\s*hidden;\s*\}/,
+    );
   });
 });
 

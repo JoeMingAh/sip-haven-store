@@ -12,6 +12,14 @@ vi.mock('../../lib/store-config.js', async (importOriginal) => ({
 }));
 
 describe('ShippingStrip', () => {
+  it('is a labelled landmark, so it is not content outside every landmark', () => {
+    config.cents = 5000;
+    render(<ShippingStrip />);
+    expect(screen.getByRole('complementary', { name: 'Shipping offer' })).toHaveTextContent(
+      'Free shipping on orders of $50 or more',
+    );
+  });
+
   it('shows the configured threshold in whole dollars', () => {
     config.cents = 5000;
     render(<ShippingStrip />);

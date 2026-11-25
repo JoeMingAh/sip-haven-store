@@ -19,3 +19,10 @@
     @apply outline outline-2 outline-offset-2 outline-sage-deep;
   }
 }
+
+/* While the first page is still loading (Layout's Suspense fallback), keep the footer
+   invisible but in place, so it does not show and then jump up as a short page arrives.
+   The footer is <main>'s next sibling in Layout. */
+main:has([data-page-loading]) ~ footer {
+  visibility: hidden;
+}
