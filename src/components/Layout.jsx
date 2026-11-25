@@ -25,8 +25,10 @@ export default function Layout() {
       <main id="main" className="flex-1 scroll-mt-28 md:scroll-mt-20">
         {/* Pages load lazily (src/router.jsx). Until the first one arrives, an empty
             screen-tall block holds the footer below the fold, so nothing jumps when the
-            page appears. Later navigations keep the old page up while the next loads. */}
-        <Suspense fallback={<div className="min-h-dvh" />}>
+            page appears. Later navigations keep the old page up while the next loads.
+            data-page-loading hides the footer until then (src/index.css): on a page
+            shorter than the screen it would otherwise show, then jump up. */}
+        <Suspense fallback={<div className="min-h-dvh" data-page-loading />}>
           <Outlet />
         </Suspense>
       </main>
